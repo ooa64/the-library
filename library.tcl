@@ -92,7 +92,6 @@ namespace eval library {
                 break
             }
         }
-        set user ""
         return false
     }
 
@@ -193,15 +192,6 @@ namespace eval library {
     }
 
     ### API helpers ###
-
-    proc setvar {params var} {
-        # NOTE: creates or updates variable in the caller frame
-        if {[dict exists $params $var]} {
-            uplevel set $var [dict get $params $var]
-            return true
-        }
-        return false
-    }
 
     proc setvars {params args} {
         # NOTE: creates or updates variables in the caller frame
@@ -307,10 +297,10 @@ namespace eval library {
         set fields {"title" "author" "publisher" "published"}
         set vars [setvars $params "title" "author"]
         set orderby ""
-        if {[setvar $params "order"]} {
+        if {[llength [setvars $params "order"]]} {
             # check for sql injection
             if {$order in $fields} {
-                if {[setvar $params "reverse"] && $reverse} {
+                if {[llength [setvars $params "reverse"]] && $reverse} {
                     set orderby [format {order by %s desc} $order]
                 } else {
                     set orderby [format {order by %s} $order]
@@ -328,7 +318,6 @@ namespace eval library {
         dbupdate {insert or replace into book(%s) values(%s)} \
                 [selectfields $vars] [valuesfields $vars]
     }
-
 
     proc /delbook {username userrole params} {
         checkrole $userrole "admin"
@@ -386,7 +375,7 @@ namespace eval library {
 }
 
 if {$::argv0 eq [info script]} {
-    puts "Library"
+    puts "The Library"
     ::library::start
     vwait forever
 }

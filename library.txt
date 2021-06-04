@@ -43,7 +43,7 @@ Windows:
 Відкрити посилання http://localhost:9999 та зареєструватись як admin
 
 Linux:
-Встановити tclsh та tclsqlite (debian: apt install tcl libsqlite2-tcl)
+Встановити tclsh та tclsqlite (debian: apt install tcl libsqlite3-tcl)
 Для старту серверу просто запустити library.tcl як shell скрипт.
 Запустити браузер, ввести http://localhost:9999 та зареєструватись як admin
 
@@ -52,7 +52,7 @@ Linux:
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 tcl8.6 + tclsqlite3
-javascript у сучасному веб-браузері (ecmascript 2015?)
+html/javascript у сучасному веб-браузері (ecmascript 2015?)
 Додаткові бібліотеки не використовуються
 
 
