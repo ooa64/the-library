@@ -79,8 +79,6 @@ foreach {n i p} {
     unset n i p
 }
 
-# TODO authuser
-
 test setvars-1.4.0 "setvars empty list" {
     list [library::setvars [dict create p1 v1]] [info exists p1]
 } {{} 0}

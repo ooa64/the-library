@@ -43,7 +43,7 @@ Windows:
 Відкрити посилання http://localhost:9999 та зареєструватись як admin
 
 Linux:
-Встановити tclsh та tclsqlite (debian: apt install tcl libsqlite3-tcl)
+Встановити tclsh та tclsqlite (debian: apt install tcl8.6 libsqlite3-tcl)
 Для старту серверу просто запустити library.tcl як shell скрипт.
 Запустити браузер, ввести http://localhost:9999 та зареєструватись як admin
 
@@ -59,7 +59,7 @@ html/javascript у сучасному веб-браузері (ecmascript 2015?)
 База даних
 ~~~~~~~~~~
 
-У базі даних (sqlite, скрит library.sql) зберігаються об'єкти трьох типів:
+У базі даних (sqlite, скрипт library.sql) зберігаються об'єкти трьох типів:
 	user - користувач системи типу admin,librarian чи reader;
 	book - книга;
 	request - запит на книгу.
@@ -74,10 +74,10 @@ html/javascript у сучасному веб-браузері (ecmascript 2015?)
 	0	    0           0           requested   книгу замовлено читачем але не видано бібліотекарем
 	0           0           1           returned    книгу повернено з читального залу до сховища
 	0           1           0           lost        книгу загублено на абонементі читача(?)
-	0           1           1           returned    повернуто з абонементу в сховище (returndate > returned = штраф)
+	0           1           1           returned    повернуто з абонементу в сховище (returndate < returned = штраф)
 	1           0           0           reading     книга знаходиться в читальному залі
 	1           0           1           *invalid*   можливо: книга повернута з читального залу бібліотекарю(?)
-	1           1           0           abonement   книга на абонементі (returndate > today = штраф)
+	1           1           0           abonement   книга на абонементі (returndate < today = штраф)
 	1           1           1           *invalid*   можливо: книга повернута з абонементу бібліотекарю(?)
 
 
@@ -98,7 +98,7 @@ html/javascript у сучасному веб-браузері (ecmascript 2015?)
 Читач
 - автоматична реєстрація при першому вході
 - query book by author/title, sort by author/title/publisher/published
-- create request by author/title and, maybe, publisher/published
+- create request by author/title
 - list abonement (served requests with returnterm set)
 
 
@@ -160,4 +160,3 @@ function	parameters						permissions			description
 /getrequests	"readername" "state"					"librarian"			list requests
 /getrequests	"state"							"reader"			list his requests
 /closerequest	"id"							"librarian"			close request, set 'returned' date, make book available
-
