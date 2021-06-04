@@ -1,0 +1,34 @@
+package require tcltest
+namespace import -force ::tcltest::*
+
+source library.tcl
+
+file delete [file join [testsDirectory] test.db]
+::library::init library.sql [file join [testsDirectory] test.db]
+
+test userperm-1.0.1 {userperm empty} {
+    library::userrole ""
+} {}
+
+test userperm-1.0.2 {userperm unknown} {
+    library::userrole "xxx"
+} {}
+
+test userperm-1.0.3 {userperm admin} {
+    library::userrole "admin"
+} {admin}
+
+test newreader-1.1.0 {create new reader} -body {
+    string cat \
+            [::library::newreader "reader"] \n\
+            [::library::userrole "reader"]
+} -result {
+reader}
+
+# TODO: date format test
+
+::library::done 
+
+#catch {file delete "test.db"}
+
+cleanupTests

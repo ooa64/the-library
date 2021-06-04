@@ -1,0 +1,203 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <title>library librarian</title>
+  </head>
+  <body onload=onLoad()>
+    <p id="login"></p>
+    <button onclick=logout()>logout</button>
+    <hr/>
+
+    <p>REQUESTS:</p>
+    <table id='requests'>
+      <tr>
+        <th>readername</th>
+        <th>title</th>
+        <th>author</th>
+        <th>publisher</th>
+        <th>published</th>
+        <th>action</th>
+      </tr>
+    </table>
+
+    <p>READING ROOM:</p>
+    <table id='reading'>
+      <tr>
+        <th>readername</th>
+        <th>title</th>
+        <th>author</th>
+        <th>publisher</th>
+        <th>published</th>
+        <th>action</th>
+      </tr>
+    </table>
+
+    <p>ABONEMENT <select id="reader" onclick=getAbonement()></select></p>
+    <table id='abonement'>
+      <tr>
+        <th>bookid</th>
+        <th>title</th>
+        <th>author</th>
+        <th>publisher</th>
+        <th>published</th>
+        <th>returnterm</th>
+        <th>action</th>
+      </tr>
+    </table>
+
+    <script>
+      function onLoad() {
+        getUser()
+        getRequests()
+        getReading()
+        getReaders()
+        getAbonement()        
+      }
+      function getUser() {
+        fetch("/getuser").then(data => data.json()).then(json => {
+          document.getElementById("login").textContent = `${json.role}: ${json.name}`
+        })
+      }
+      //
+      function getRequests() {
+        fetch("/getrequests?state=requested").then(data => data.json()).then(json => {
+          let t = document.getElementById('requests').tBodies[0];
+          while(t.childNodes.length > 2) {
+            t.removeChild(t.lastChild)
+          }
+          for (const request of json) {
+            t.appendChild(document.createElement('tr')).innerHTML = `
+              <td>${request.readername}</td>
+              <td>${request.title}</td>
+              <td>${request.author}</td>
+              <td>${request.publisher}</td>
+              <td>${request.published}</td>
+              <td>
+                return date
+                <input id='returnterm${request.id}'/>
+                <button onclick='satisfyRequest(${JSON.stringify(request)})'>satisfy</button>
+              </td>`
+          }
+        })
+      }
+      function satisfyRequest(request) {
+        let p = new URLSearchParams({
+          title: request.title,
+          author: request.author,
+          publisher: request.publisher || '',
+          published: request.published || '',
+          inuse: 0
+        })
+        fetch("/getbooks?"+p).then(resp => resp.json()).then(json => {
+          if (json.length > 0) {
+            let p = new URLSearchParams({
+              id: request.id,
+              bookid: json[0].id,
+              returnterm: document.getElementById('returnterm'+request.id).value
+            })
+            fetch("/setrequest?"+p).then(resp => {
+              if (resp.ok) {
+                this.getRequests()
+                this.getReading()
+                this.getAbonement()
+              } else {
+                resp.text().then(text => alert(resp.statusText+"\n"+text))
+              }
+            })
+          } else {
+            alert("Requested book not found") 
+          }
+        })
+      }
+      //
+      function getReading() {
+        let t = document.getElementById('reading').tBodies[0];
+        while(t.childNodes.length > 2) {
+          t.removeChild(t.lastChild)
+        }
+        fetch("/getrequests?state=reading").then(data => data.json()).then(json => {
+          for (const request of json) {
+            t.appendChild(document.createElement('tr')).innerHTML = `
+              <td>${request.readername}</td>
+              <td>${request.bookid}</td>
+              <td>${request.title}</td>
+              <td>${request.author}</td>
+              <td>${request.publisher}</td>
+              <td>${request.published}</td>
+              <td>
+                <button onclick='updateReading(${request.id})'>return</button>
+              </td>`
+          }
+        })
+      }
+      function updateReading(requestid) {
+        let p = new URLSearchParams({id: requestid})
+        fetch("/closerequest?"+p).then(resp => {
+          if (resp.ok) {
+            this.getReading()
+          } else {
+            resp.text().then(text => alert(resp.statusText+"\n"+text))
+          }
+        });
+      }
+      //
+      function getReaders() {
+        fetch("/getusers?role=reader").then(resp => resp.json()).then(json => {
+          let h = "<option value=''></option>"
+          for (const user of json) {
+            h += `<option value='${user.name}'>${user.name}</option>`
+          }          
+          document.getElementById('reader').innerHTML = h
+        })
+      }
+      function getAbonement() {
+        let t = document.getElementById('abonement').tBodies[0];
+        while(t.childNodes.length > 2) {
+          t.removeChild(t.lastChild)
+        }
+        let r = document.getElementById('reader').value;
+        if (r === "") {
+          return
+        }
+        let p = new URLSearchParams({readername: r, state: 'abonement'})
+        fetch("/getrequests?"+p).then(data => data.json()).then(json => {
+          for (const request of json) {
+            t.appendChild(document.createElement('tr')).innerHTML = `
+              <td>${request.bookid}</td>
+              <td>${request.title}</td>
+              <td>${request.author}</td>
+              <td>${request.publisher}</td>
+              <td>${request.published}</td>
+              <td>${request.returnterm}</td>
+              <td>
+                <button onclick='updateAbonement(${request.id})'>return</button>
+              </td>`
+          }
+        })
+      } 
+      function updateAbonement(requestid) {
+        let p = new URLSearchParams({id: requestid})
+        fetch("/closerequest?"+p).then(resp => {
+          if (resp.ok) {
+            this.getAbonement()
+          } else {
+            resp.text().then(text => alert(resp.statusText+"\n"+text))
+          }
+        });
+      }
+      //
+      function logout() {
+        document.cookie = "libraryuser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT" 
+        window.location.href = "/";
+      }
+    </script>
+    <style>
+      table, th, td {
+        border: 1px solid black;
+        border-collapse: collapse;
+        padding: 10px;
+      }
+    </style>
+  </body>
+</html>

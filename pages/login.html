@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <title>library login</title>
+  </head>
+  <body>
+    <input id='name'/><button onclick='login()'>login</button>
+    <script>
+      function login() {
+          document.cookie = `libraryuser=${document.getElementById("name").value}; path=/`
+          window.location.href = "/";
+      }
+    </script>
+  </body>
+</html>

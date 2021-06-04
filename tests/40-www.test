@@ -1,0 +1,63 @@
+package require tcltest
+namespace import -force ::tcltest::*
+
+source library.tcl
+
+file delete [file join [testsDirectory] test.db]
+set ::library::DBFILE [file join [testsDirectory] test.db]
+set ::library::DBSCHEMA "library.sql"
+set ::library::HTTPPORT "9998"
+after idle library::start
+update idle
+
+# add users for tests
+get "/getuser" "reader"                              ;# autoregister reader
+get "/getuser" "blocked"                             ;# autoregister another reader
+get "/setreader?name=blocked&state=blocked" "admin"  ;# set blocked state for reader
+get "/addlibrarian?name=librarian" "admin"           ;# 
+
+proc get {call user} {
+    set h [socket localhost $::library::HTTPPORT]
+    puts $h "GET $call HTTP/1.0\nCookie: libraryuser=$user\n"
+    flush $h
+    update ;# pass control to the server
+    set s [read -nonewline $h]
+    close $h
+    return $s
+}
+
+test getroot-1.0.1 {get page, no user} -body {
+    get "/" ""
+} -match glob -result {HTTP/1.1 200 *
+*library login*}
+
+test getroot-1.1.1 {get page by admin} -body {
+    get "/" "admin"
+} -match glob -result {HTTP/1.1 200 *
+*library admin*}
+
+test getroot-1.1.2 {get page by librarian} -body {
+    get "/" "librarian"
+} -match glob -result {HTTP/1.1 200 *
+*library librarian*}
+
+test getroot-1.1.3 {get page by reader} -body {
+    get "/" "reader"
+} -match glob -result {HTTP/1.1 200 *
+*library reader*}
+
+test getroot-1.1.4 {get page by blocked reader} -body {
+    get "/" "blocked"
+} -match glob -result {HTTP/1.1 200 *
+*library login*}
+
+test getroot-1.1.5 {get page by unknown reader} -body {
+    get "/" "unknown"
+} -match glob -result {HTTP/1.1 200 *
+*library reader*}
+
+::library::stop
+
+#catch {file delete "test.db"}
+
+cleanupTests

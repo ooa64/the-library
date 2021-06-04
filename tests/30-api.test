@@ -1,0 +1,271 @@
+package require tcltest
+namespace import -force ::tcltest::*
+
+source library.tcl
+
+file delete [file join [testsDirectory] test.db]
+set ::library::DBFILE [file join [testsDirectory] test.db]
+set ::library::DBSCHEMA "library.sql"
+set ::library::HTTPPORT "9998"
+after idle ::library::start
+update idle
+
+proc get {call user} {
+    set h [socket localhost $::library::HTTPPORT]
+    puts $h "GET $call HTTP/1.0\nCookie: libraryuser=$user\n"
+    flush $h
+    update ;# pass control to the server
+    set s [read -nonewline $h]
+    close $h
+    return $s
+}
+
+test getempty-1.0.0 {get empty} -body {
+    get "" "xxx"
+} -match glob -result {HTTP/1.1 400 *
+bad request}
+
+test getempty-1.0.1 {get bla} -body {
+    get "bla" "admin"
+} -match glob -result {HTTP/1.1 400 *
+bad request}
+
+test getempty-1.0.2 {get bla api} -body {
+    get "/bla" "admin"
+} -match glob -result {HTTP/1.1 500 *
+invalid api call}
+
+test getempty-1.0.3 {get invalid delimiter} -body {
+    get "/getuser&bla" "admin"
+} -match glob -result {HTTP/1.1 500 *
+invalid api call}
+
+###
+
+test getuser-1.2.0 {get user admin} -body {
+    get "/getuser" "admin"
+} -match glob -result {HTTP/1.1 200 *
+{"name":"admin","role":"admin","state":"active"}}
+
+test getusers-1.2.1 {get all users} -body {
+    get "/getusers" "admin"
+} -match glob -result {HTTP/1.1 200 *
+\[{"name":"admin","role":"admin","state":"active"}]}
+
+test getusers-1.2.2 {get users by name} -body {
+    get "/getusers?name=admin" "admin"
+} -match glob -result {HTTP/1.1 200 *
+\[{"name":"admin","role":"admin","state":"active"}]}
+
+test getusers-1.2.3 {get users by role} -body {
+    get "/getusers?role=admin" "admin"
+} -match glob -result {HTTP/1.1 200 *
+\[{"name":"admin","role":"admin","state":"active"}]}
+
+test newuser-1.2.4 {create reader} -body {
+    get "/getuser" "reader"
+} -match glob -result {HTTP/1.1 200 *
+{"name":"reader","role":"reader","state":"active"}}
+
+test setuser-1.2.5 {block user} -body {
+    string cat [get "/setreader?name=reader&state=blocked" "admin"] \n [get "/getusers?name=reader" "admin"]
+} -match glob -result {HTTP/1.1 200 *
+\[{"name":"reader","role":"reader","state":"blocked"}]}
+
+test setuser-1.2.6 {unblock user} -body {
+    string cat \
+            [get "/setreader?name=reader&state=active" "admin"] \n\
+            [get "/getusers?name=reader" "admin"]
+} -match glob -result {HTTP/1.1 200 *
+HTTP/1.1 200 *
+\[{"name":"reader","role":"reader","state":"active"}]}
+
+test newuser-1.2.7 {create new librarian} -body {
+    string cat \
+            [get "/addlibrarian?name=librarian" "admin"] \n\
+            [get "/getusers?name=librarian" "admin"]
+} -match glob -result {HTTP/1.1 200 *
+HTTP/1.1 200 *
+\[{"name":"librarian","role":"librarian","state":"active"}]}
+
+test newuser-1.2.8 {create/delete librarian} -body {
+    string cat \
+            [get "/addlibrarian?name=yyy" "admin"] \n\
+            [get "/getusers?name=yyy" "admin"] \n\
+            [get "/dellibrarian?name=yyy" "admin"] \n\
+            [get "/getusers?name=yyy" "admin"]
+} -match glob -result {HTTP/1.1 200 *
+HTTP/1.1 200 *
+\[{"name":"yyy","role":"librarian","state":"active"}]
+HTTP/1.1 200 *
+HTTP/1.1 200 *
+\[]}
+
+###
+
+test getbooks-1.3.0 {get books} -body {
+    get "/getbooks" "admin"
+} -match glob -result {HTTP/1.1 200 *
+\[]}
+
+test setbook-1.3.1 {set book empty} -body {
+    get "/setbook" "admin"
+} -match glob -result {HTTP/1.1 500 *
+no data}
+
+test setbook-1.3.2 {add book} -body {
+    string cat \
+            [get "/setbook?title=t&author=a" "admin"] \n\
+            [get "/getbooks" "admin"]
+} -match glob -result {HTTP/1.1 200 *
+HTTP/1.1 200 *
+\[{"id":1,"title":"t","author":"a","publisher":null,"published":null,"inuse":0}]}
+
+test getbooks-1.3.3 {get book by id} -body {
+    get "/getbooks?id=1" "admin"
+} -match glob -result {HTTP/1.1 200 *
+\[{"id":1,"title":"t","author":"a","publisher":null,"published":null,"inuse":0}]}
+
+test setbook-1.3.4 {update book} -body {
+    string cat \
+            [get "/setbook?id=1&title=T&author=A" "admin"] \n\
+            [get "/getbooks?id=1" "admin"]
+} -match glob -result {HTTP/1.1 200 *
+HTTP/1.1 200 *
+\[{"id":1,"title":"T","author":"A","publisher":null,"published":null,"inuse":0}]}
+
+test setbook-1.3.5 {add another book} -body {
+    string cat \
+            [get "/setbook?title=t&author=a&publisher=p&published=2001-01-01" "admin"] \n\
+            [get "/getbooks?id=2" "admin"]
+} -match glob -result {HTTP/1.1 200 *
+HTTP/1.1 200 *
+\[{"id":2,"title":"t","author":"a","publisher":"p","published":"2001-01-01","inuse":0}]}
+
+test setbook-1.3.6 {add/delete book} -body {
+    string cat \
+            [get "/setbook?title=x&author=y" "admin"] \n\
+            [get "/getbooks?id=3" "admin"] \n\
+            [get "/delbook?id=3" "admin"] \n\
+            [get "/getbooks?id=3" "admin"]
+} -match glob -result {HTTP/1.1 200 *
+HTTP/1.1 200 *
+\[{"id":3,"title":"x","author":"y","publisher":null,"published":null,"inuse":0}]
+HTTP/1.1 200 *
+HTTP/1.1 200 *
+\[]}
+
+###
+
+test querybooks-1.4.0 {empty query by admin} -body {
+    get "/querybooks?title=nonexistant" "admin"
+} -match glob -result {HTTP/1.1 200 *
+\[]}
+
+test querybooks-1.4.1 {empty query by librarian} -body {
+    get "/querybooks?title=nonexistant" "admin"
+} -match glob -result {HTTP/1.1 200 *
+\[]}
+
+test querybooks-1.4.2 {empty query by reader} -body {
+    get "/querybooks?title=nonexistant" "admin"
+} -match glob -result {HTTP/1.1 200 *
+\[]}
+
+test querybooks-1.4.3 {query all books} -body {
+    get "/querybooks" "admin"
+} -match glob -result {HTTP/1.1 200 *
+\[{"title":"T","author":"A","publisher":null,"published":null},{"title":"t","author":"a","publisher":"p","published":"2001-01-01"}]}
+
+test querybooks-1.4.4 {query books filter} -body {
+    get "/querybooks?title=T" "admin"
+} -match glob -result {HTTP/1.1 200 *
+\[{"title":"T","author":"A","publisher":null,"published":null}]}
+
+test querybooks-1.4.5 {query books filter} -body {
+    get "/querybooks?author=a" "admin"
+} -match glob -result {HTTP/1.1 200 *
+\[{"title":"t","author":"a","publisher":"p","published":"2001-01-01"}]}
+
+test querybooks-1.4.10 {query order} -body {
+    get "/querybooks?order=title" "admin"
+} -match glob -result {HTTP/1.1 200 *
+\[{"title":"T","author":"A","publisher":null,"published":null},{"title":"t","author":"a","publisher":"p","published":"2001-01-01"}]}
+
+test querybooks-1.4.11 {query reverse order} -body {
+    get "/querybooks?order=title&reverse=true" "admin"
+} -match glob -result {HTTP/1.1 200 *
+\[{"title":"t","author":"a","publisher":"p","published":"2001-01-01"},{"title":"T","author":"A","publisher":null,"published":null}]}
+
+test addrequest-1.4.20 {request untitled book} -body {
+    get "/addrequest" "reader"
+} -match glob -result {HTTP/1.1 500 *
+no data}
+
+test addrequest-1.4.21 {request unauthored book} -body {
+    get "/addrequest?author=a" "reader"
+} -match glob -result {HTTP/1.1 500 *
+NOT NULL constraint failed: request.title}
+
+test addrequest-1.4.22 {request a right book} -body {
+    string cat \
+            [get "/addrequest?title=t&author=a" "reader"] \n\
+            [get "/getrequests" "reader"]
+} -match glob -result {HTTP/1.1 200 *
+HTTP/1.1 200 *
+\[{"id":1,"bookid":null,"readername":"reader","title":"t","author":"a","publisher":null,"published":null,"returnterm":null,"returned":null,"state":"requested"}]}
+
+test setrequest-1.4.22 {serve request for the reading room} -body {
+    string cat \
+        [get "/setrequest?id=1&bookid=1" "librarian"] \n\
+        [get "/getrequests?id=1" "librarian"]
+} -match glob -result {HTTP/1.1 200 *
+HTTP/1.1 200 *
+\[{"id":1,"bookid":1,"readername":"reader","title":"t","author":"a","publisher":null,"published":null,"returnterm":null,"returned":null,"state":"reading"}]}
+
+test setrequest-1.4.22.1 {check if book requsted} -body {
+    get "/getbooks?id=1" "admin"
+} -match glob -result {HTTP/1.1 200 *
+\[{"id":1,"title":"T","author":"A","publisher":null,"published":null,"inuse":1}]}
+
+test setrequest-1.4.22.2 {get books in use} -body {
+    get "/getbooks?inuse=1" "admin"
+} -match glob -result {HTTP/1.1 200 *
+\[{"id":1,"title":"T","author":"A","publisher":null,"published":null,"inuse":1}]}
+
+test setrequest-1.4.22.3 {delete books in use} -body {
+    get "/delbook?id=1" "admin"
+} -match glob -result {HTTP/1.1 500 *
+FOREIGN KEY constraint failed}
+
+test delrequest-1.4.23 {delete request failed} -body {
+    get "/delrequest?id=1" "reader"
+} -match glob -result {HTTP/1.1 500 *
+wrong state}
+
+test closerequest-1.4.24 {serve request for the reading room} -body {
+    string cat \
+        [get "/closerequest?id=1" "librarian"] \n\
+        [get "/getrequests?id=1" "librarian"]
+} -match glob -result {HTTP/1.1 200 *
+HTTP/1.1 200 *
+\[{"id":1,"bookid":null,"readername":"reader","title":"t","author":"a","publisher":null,"published":null,"returnterm":null,"returned":"????-??-??","state":"returned"}]}
+
+test delrequest-1.4.25 {delete request} -body {
+    string cat \
+            [get "/addrequest?title=t&author=a" "reader"] \n\
+            [get "/getrequests?state=requested" "reader"] \n\
+            [get "/delrequest?id=2" "reader"] \n\
+            [get "/getrequests?state=requested" "reader"]
+} -match glob -result {HTTP/1.1 200 *
+HTTP/1.1 200 *
+\[{"id":2,"bookid":null,"readername":"reader","title":"t","author":"a","publisher":null,"published":null,"returnterm":null,"returned":null,"state":"requested"}]
+HTTP/1.1 200 *
+HTTP/1.1 200 *
+\[]}
+
+::library::stop
+
+#catch {file delete "test.db"}
+
+cleanupTests

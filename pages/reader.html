@@ -1,0 +1,161 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <title>library reader</title>
+  </head>
+  <body onload=onLoad()>
+    <p id='login'></p>
+    <button onclick=logout()>logout</button>
+    <hr/>
+
+    <p>CATALOG:</p>
+    <table id='catalog'>
+      <tr>
+          <th>title<input type='radio' name='order' value='title' checked/></th>
+          <th>author<input type='radio' name='order' value='author'/></th>
+          <th>publisher<input type='radio' name='order' value='publisher'/></th>
+          <th>published<input type='radio' name='order' value='published'/></th>
+          <th>action</th>
+      </tr>
+      <tr>
+        <td><input id='book.title'/></td>
+        <td><input id='book.author'/></td>
+        <td></td>
+        <td></td>
+        <td>
+          <button onclick="getCatalog()">query</button>
+        </td>      
+      </tr>
+    </table>
+
+    <p>REQUESTS:</p>
+    <table id='requests'>
+      <tr>
+        <th>title</th>
+        <th>author</th>
+        <th>publisher</th>
+        <th>published</th>
+        <th>returnterm</th>
+        <th>returned</th>
+        <th>state</th>
+        <th>penalty</th>
+        <th>action</th>
+      </tr>
+    </table>
+
+    <script>
+      const penaltyRate = 1
+      //
+      function onLoad() {
+        getUser()
+        getCatalog()
+        getRequests()
+      }
+      function getUser() {
+        fetch("/getuser").then(data => data.json()).then(json => {
+          document.getElementById("login").textContent = `${json.role}: ${json.name}`
+        })
+      }
+      //
+      function getCatalog() {
+        let p = new URLSearchParams({
+          title: document.getElementById("book.title").value,
+          author: document.getElementById("book.author").value
+        })
+        for (const e of document.getElementsByName("order")) {
+          if (e.checked) {
+            p.append("order", e.value)
+          }
+        }
+        fetch("/querybooks?"+p).then(data => data.json()).then(json => {
+          let t = document.getElementById('catalog').tBodies[0];
+          while(t.childNodes.length > 3) {
+            t.removeChild(t.lastChild)
+          }
+          for (const book of json) {
+            t.appendChild(document.createElement('tr')).innerHTML = `
+              <td>${book.title}</td>
+              <td>${book.author}</td>
+              <td>${book.publisher || ""}</td>
+              <td>${book.published || ""}</td>
+              <td>
+                <button onclick='addRequest(${JSON.stringify(book)})'>
+                  request
+                </button>
+              </td>`
+          }
+        })
+      }
+      //
+      function addRequest(book) {
+        // filter nulls for URLSearchParams
+        Object.keys(book).forEach(k => {
+          if (book[k] == null) {
+            delete book[k]
+          }
+        })
+        let p = new URLSearchParams(book)
+        fetch("/addrequest?"+p).then(resp => {
+          if (resp.ok) {
+            this.getRequests()
+          } else {
+            resp.text().then(text => {
+              alert(resp.statusText+"\n"+text)
+            })
+          }
+        });      
+      }
+      function getRequests() {
+        fetch("/getrequests").then(data => data.json()).then(json => {
+          let t = document.getElementById('requests').tBodies[0];
+          while(t.childNodes.length > 2) {
+            t.removeChild(t.lastChild)
+          }
+          for (const request of json) {
+            let x = !!request.returnterm && ((Date.parse(request.returned) || Date.now()) >= Date.parse(request.returnterm))
+            console.log('!!',request.returnterm,' && ',' ((',Date.parse(request.returned),' || ',Date.now(),') >= ',Date.parse(request.returnterm),' = ', x)
+            t.appendChild(document.createElement('tr')).innerHTML = `
+              <td>${request.title}</td>
+              <td>${request.author}</td>
+              <td>${request.publisher || ""}</td>
+              <td>${request.published || ""}</td>
+              <td>${request.returnterm || ""}</td>
+              <td>${request.returned || ""}</td>
+              <td>${request.state}</td>
+              <td>${penaltyRate*x}</td>
+              <td>
+                <button ${request.state !== "requested" ? "hidden" : ""} onclick=deleteRequest(${request.id})>
+                  delete
+                </button>
+              </td>`
+          }
+        })
+      }
+      function deleteRequest(id) {
+        let p = new URLSearchParams({id: id})
+        fetch("/delrequest?id="+id).then(resp => {
+          if (resp.ok) {
+            this.getRequests()
+          } else {
+            resp.text().then(text => {
+              alert(resp.statusText+"\n"+text)
+            })
+          }
+        });
+      }
+      //
+      function logout() {
+        document.cookie = "libraryuser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT" 
+        window.location.href = "/";
+      }
+    </script>
+    <style>
+      table, th, td {
+        border: 1px solid black;
+        border-collapse: collapse;
+        padding: 10px;
+      }
+    </style>
+  </body>
+</html>
