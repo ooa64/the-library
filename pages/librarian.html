@@ -33,7 +33,7 @@
       </tr>
     </table>
 
-    <p>ABONEMENT <select id="reader" onclick=getAbonement()></select></p>
+    <p>READER'S ABONEMENT: <select id="reader" onclick=getAbonement()></select></p>
     <table id='abonement'>
       <tr>
         <th>bookid</th>
@@ -120,7 +120,6 @@
           for (const request of json) {
             t.appendChild(document.createElement('tr')).innerHTML = `
               <td>${request.readername}</td>
-              <td>${request.bookid}</td>
               <td>${request.title}</td>
               <td>${request.author}</td>
               <td>${request.publisher}</td>
