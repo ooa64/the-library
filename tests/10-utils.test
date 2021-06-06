@@ -121,5 +121,22 @@ test fields-1.5.5 "updatefields" {
     library::updatefields {a b}
 } {a=:a,b=:b}
 
+foreach {n i s} {
+    0 ""       {}
+    1 "X"      {X}
+    2 "+"      { }
+    3 "%20"    { }
+    4 "%2B"    {+}
+    5 "%2b"    {+}
+    6 "%D0%B9" {й}
+    7 "X+%D0%B9%2b%d1%86" {X й+ц}
+} {
+
+    test urldecode-1.6.$n "urldecode '$i'" {
+        library::urldecode $i
+    } $s
+
+    unset n i s
+}
 
 cleanupTests

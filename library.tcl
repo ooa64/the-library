@@ -49,7 +49,7 @@ namespace eval library {
     proc listen {chan addr port} {
         log "$chan: connect from $addr:$port"
         try {
-            fconfigure $chan -translation {auto binary}
+            fconfigure $chan -translation {auto lf}
             if {[getrequest $chan request requestparams]} {
                 log "$chan: requested $request?$requestparams"
                 if {[getuser $chan user] && [userstate $user] ne "blocked"} {
@@ -114,7 +114,7 @@ namespace eval library {
         }
         puts $chan "HTTP/1.1 $code $codetext($code)\nConnection: close"
         if {$contenttype ne ""} {
-            puts $chan "Content-Type: $contenttype\nContent-Length: [string length $content]\n"
+            puts $chan "Content-Type: $contenttype\nContent-Length: [string bytelength $content]\n"
             puts -nonewline $chan $content
         } else {
             puts $chan ""
@@ -198,7 +198,7 @@ namespace eval library {
         set l {}
         foreach n $args {
             if {[dict exists $params $n]} {
-                uplevel set $n [dict get $params $n]
+                uplevel set $n [urldecode [dict get $params $n]]
                 lappend l $n
             }
         }
@@ -245,6 +245,12 @@ namespace eval library {
             return true
         }
         error "no data"
+    }
+
+    proc urldecode {str} {
+        set str [string map [list + { } "\\" "\\\\"] $str]
+        regsub -all -- {%([A-Fa-f0-9][A-Fa-f0-9])} $str {\\u00\1} str
+        return [encoding convertfrom [subst -novar -nocommand $str]]
     }
 
     ### API ###
