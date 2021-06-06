@@ -5,10 +5,10 @@
     <title>library login</title>
   </head>
   <body>
-    <input id='name'/><button onclick='login()'>login</button>
+    <p><input id='name'/><button onclick='login()'>login</button></p>
     <script>
       function login() {
-          document.cookie = `libraryuser=${document.getElementById("name").value}; path=/`
+          document.cookie = `libraryuser=${document.getElementById("name").value}; path=/; SameSite=Strict`
           window.location.href = "/";
       }
     </script>

@@ -4,7 +4,6 @@
     <meta charset='utf-8'>
     <title>library admin</title>
   </head>
-
   <body onload=onLoad()>
     <p id="login"></p>
     <button onclick=logout()>logout</button>
@@ -27,10 +26,12 @@
       </tr>
       <tr>
           <th><input id='librarian'/></th>
-          <th><button onclick='addLibrarian(document.getElementById("librarian").value)'>add</button></th>
+          <th>
+            <button onclick='addLibrarian(document.getElementById("librarian").value)'>add</button>
+          </th>
       </tr>
-
     </table>
+
     <p>BOOKS:</p>
     <table id="books">
       <tr>
@@ -70,7 +71,7 @@
       function getReaders() {
         fetch("/getusers?role=reader").then(resp => resp.json()).then(json => {
           let t = document.getElementById('readers').tBodies[0];
-          while(t.childNodes.length > 2) {
+          while (t.childNodes.length > 2) {
             t.removeChild(t.lastChild)
           }
           for (const user of json) {
@@ -95,7 +96,7 @@
       function getLibrarians() {
         fetch("/getusers?role=librarian").then(resp => resp.json()).then(json => {
           let t = document.getElementById('librarians').tBodies[0]
-          while(t.childNodes.length > 3) {
+          while (t.childNodes.length > 3) {
             t.removeChild(t.lastChild)
           }
           for (const user of json) {
@@ -125,7 +126,7 @@
       function getBooks() {
         fetch("/getbooks").then(resp => resp.json()).then(json => {
           let t = document.getElementById('books').tBodies[0]
-          while(t.childNodes.length > 3) {
+          while (t.childNodes.length > 3) {
             t.removeChild(t.lastChild)
           }
           for (const book of json) {
@@ -176,7 +177,7 @@
       }
       //
       function logout() {
-        document.cookie = "libraryuser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT" 
+        document.cookie = "libraryuser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict" 
         window.location.href = "/";
       }
     </script>

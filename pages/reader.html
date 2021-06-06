@@ -49,7 +49,6 @@
       //
       function onLoad() {
         getUser()
-        getCatalog()
         getRequests()
       }
       function getUser() {
@@ -70,7 +69,7 @@
         }
         fetch("/querybooks?"+p).then(data => data.json()).then(json => {
           let t = document.getElementById('catalog').tBodies[0];
-          while(t.childNodes.length > 3) {
+          while (t.childNodes.length > 3) {
             t.removeChild(t.lastChild)
           }
           for (const book of json) {
@@ -89,7 +88,7 @@
       }
       //
       function addRequest(book) {
-        // filter nulls for URLSearchParams
+        // filter out null params
         Object.keys(book).forEach(k => {
           if (book[k] == null) {
             delete book[k]
@@ -109,12 +108,11 @@
       function getRequests() {
         fetch("/getrequests").then(data => data.json()).then(json => {
           let t = document.getElementById('requests').tBodies[0];
-          while(t.childNodes.length > 2) {
+          while (t.childNodes.length > 2) {
             t.removeChild(t.lastChild)
           }
           for (const request of json) {
             let x = !!request.returnterm && ((Date.parse(request.returned) || Date.now()) >= Date.parse(request.returnterm))
-            console.log('!!',request.returnterm,' && ',' ((',Date.parse(request.returned),' || ',Date.now(),') >= ',Date.parse(request.returnterm),' = ', x)
             t.appendChild(document.createElement('tr')).innerHTML = `
               <td>${request.title}</td>
               <td>${request.author}</td>
@@ -146,7 +144,7 @@
       }
       //
       function logout() {
-        document.cookie = "libraryuser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT" 
+        document.cookie = "libraryuser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict" 
         window.location.href = "/";
       }
     </script>

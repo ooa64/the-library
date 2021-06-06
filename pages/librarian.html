@@ -63,7 +63,7 @@
       function getRequests() {
         fetch("/getrequests?state=requested").then(data => data.json()).then(json => {
           let t = document.getElementById('requests').tBodies[0];
-          while(t.childNodes.length > 2) {
+          while (t.childNodes.length > 2) {
             t.removeChild(t.lastChild)
           }
           for (const request of json) {
@@ -74,9 +74,11 @@
               <td>${request.publisher}</td>
               <td>${request.published}</td>
               <td>
-                return date
+                return term
                 <input id='returnterm${request.id}'/>
-                <button onclick='satisfyRequest(${JSON.stringify(request)})'>satisfy</button>
+                <button onclick='satisfyRequest(${JSON.stringify(request)})'>
+                  satisfy
+                </button>
               </td>`
           }
         })
@@ -113,7 +115,7 @@
       //
       function getReading() {
         let t = document.getElementById('reading').tBodies[0];
-        while(t.childNodes.length > 2) {
+        while (t.childNodes.length > 2) {
           t.removeChild(t.lastChild)
         }
         fetch("/getrequests?state=reading").then(data => data.json()).then(json => {
@@ -125,7 +127,9 @@
               <td>${request.publisher}</td>
               <td>${request.published}</td>
               <td>
-                <button onclick='updateReading(${request.id})'>return</button>
+                <button onclick='updateReading(${request.id})'>
+                  return
+                </button>
               </td>`
           }
         })
@@ -152,28 +156,29 @@
       }
       function getAbonement() {
         let t = document.getElementById('abonement').tBodies[0];
-        while(t.childNodes.length > 2) {
+        while (t.childNodes.length > 2) {
           t.removeChild(t.lastChild)
         }
         let r = document.getElementById('reader').value;
-        if (r === "") {
-          return
+        if (r !== "") {
+          let p = new URLSearchParams({readername: r, state: 'abonement'})
+          fetch("/getrequests?"+p).then(data => data.json()).then(json => {
+            for (const request of json) {
+              t.appendChild(document.createElement('tr')).innerHTML = `
+                <td>${request.bookid}</td>
+                <td>${request.title}</td>
+                <td>${request.author}</td>
+                <td>${request.publisher}</td>
+                <td>${request.published}</td>
+                <td>${request.returnterm}</td>
+                <td>
+                  <button onclick='updateAbonement(${request.id})'>
+                    returned
+                  </button>
+                </td>`
+            }
+          })
         }
-        let p = new URLSearchParams({readername: r, state: 'abonement'})
-        fetch("/getrequests?"+p).then(data => data.json()).then(json => {
-          for (const request of json) {
-            t.appendChild(document.createElement('tr')).innerHTML = `
-              <td>${request.bookid}</td>
-              <td>${request.title}</td>
-              <td>${request.author}</td>
-              <td>${request.publisher}</td>
-              <td>${request.published}</td>
-              <td>${request.returnterm}</td>
-              <td>
-                <button onclick='updateAbonement(${request.id})'>return</button>
-              </td>`
-          }
-        })
       } 
       function updateAbonement(requestid) {
         let p = new URLSearchParams({id: requestid})
@@ -187,7 +192,7 @@
       }
       //
       function logout() {
-        document.cookie = "libraryuser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT" 
+        document.cookie = "libraryuser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict" 
         window.location.href = "/";
       }
     </script>
