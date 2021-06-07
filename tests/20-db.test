@@ -1,10 +1,12 @@
 package require tcltest
 namespace import -force ::tcltest::*
 
+
 source library.tcl
 
-file delete [file join [testsDirectory] test.db]
-::library::init library.sql [file join [testsDirectory] test.db]
+catch {file delete [file join [testsDirectory] "test.db"]}
+
+library::init library.sql [file join [testsDirectory] "test.db"]
 
 test userperm-1.0.1 {userperm empty} {
     library::userrole ""
@@ -27,9 +29,9 @@ reader}
 
 # TODO: date format test
 
+library::done
 
-::library::done 
+catch {file delete [file join [testsDirectory] "test.db"]}
 
-#catch {file delete "test.db"}
 
 cleanupTests

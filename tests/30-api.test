@@ -1,13 +1,16 @@
 package require tcltest
 namespace import -force ::tcltest::*
 
+
 source library.tcl
 
-file delete [file join [testsDirectory] test.db]
-set ::library::DBFILE [file join [testsDirectory] test.db]
-set ::library::DBSCHEMA "library.sql"
-set ::library::HTTPPORT "9998"
-after idle ::library::start
+catch {file delete [file join [testsDirectory] "test.db"]}
+
+set library::DBFILE [file join [testsDirectory] "test.db"]
+set library::DBSCHEMA "library.sql"
+set library::HTTPPORT 9998
+set library::DEBUG 1
+after idle library::start
 update idle
 
 proc get {call user} {
@@ -282,8 +285,9 @@ HTTP/1.1 200 *
 HTTP/1.1 200 *
 \[]}
 
-::library::stop
+library::stop
 
-#catch {file delete "test.db"}
+catch {file delete [file join [testsDirectory] "test.db"]}
+
 
 cleanupTests

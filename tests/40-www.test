@@ -1,17 +1,19 @@
 package require tcltest
 namespace import -force ::tcltest::*
 
+
 source library.tcl
 
-file delete [file join [testsDirectory] test.db]
-set ::library::DBFILE [file join [testsDirectory] test.db]
-set ::library::DBSCHEMA "library.sql"
-set ::library::HTTPPORT "9998"
+catch {file delete [file join [testsDirectory] "test.db"]}
+
+set library::DBFILE [file join [testsDirectory] "test.db"]
+set library::DBSCHEMA "library.sql"
+set library::HTTPPORT 9998
 after idle library::start
 update idle
 
 proc get {call user} {
-    set h [socket localhost $::library::HTTPPORT]
+    set h [socket localhost $library::HTTPPORT]
     puts $h "GET $call HTTP/1.0"
     puts $h "Cookie: libraryuser=[topercents $user]\n"
     flush $h
@@ -61,8 +63,9 @@ test getroot-1.1.5 {get page by unknown reader} -body {
 } -match glob -result {HTTP/1.1 200 *
 *library reader*}
 
-::library::stop
+library::stop
 
-#catch {file delete "test.db"}
+catch {file delete [file join [testsDirectory] "test.db"]}
+
 
 cleanupTests

@@ -60,25 +60,25 @@ html/javascript у сучасному веб-браузері (ecmascript 2015?)
 ~~~~~~~~~~
 
 У базі даних (sqlite, скрипт library.sql) зберігаються об'єкти трьох типів:
-	user - користувач системи типу admin,librarian чи reader;
-	book - книга;
-	request - запит на книгу.
+        user - користувач системи типу admin,librarian чи reader;
+        book - книга;
+        request - запит на книгу.
 
 Статус об'єкту request
-	bookid - екземпляр книги
-	returnterm - строк повернення книги виданої на абонемент
-	returned - дата фактичного повернення книги з читального залу або абонементу
+        bookid - екземпляр книги
+        returnterm - строк повернення книги виданої на абонемент
+        returned - дата фактичного повернення книги з читального залу або абонементу
 
-	bookid      returnterm  returned    state       description
-	------      ----------  --------    -----       -----------
-	0           0           0           requested   книгу замовлено читачем але не видано бібліотекарем
-	0           0           1           returned    книгу повернено з читального залу до сховища
-	0           1           0           lost        книгу загублено на абонементі читача(?)
-	0           1           1           returned    повернуто з абонементу в сховище (returndate < returned = штраф)
-	1           0           0           reading     книга знаходиться в читальному залі
-	1           0           1           *invalid*   можливо: книга повернута з читального залу бібліотекарю(?)
-	1           1           0           abonement   книга на абонементі (returndate < today = штраф)
-	1           1           1           *invalid*   можливо: книга повернута з абонементу бібліотекарю(?)
+bookid      returnterm  returned    state       description
+------      ----------  --------    -----       -----------
+0           0           0           requested   книгу замовлено читачем але не видано бібліотекарем
+0           0           1           returned    книгу повернено з читального залу до сховища
+0           1           0           lost        книгу загублено на абонементі читача(?)
+0           1           1           returned    повернуто з абонементу в сховище (returndate < returned = штраф)
+1           0           0           reading     книга знаходиться в читальному залі
+1           0           1           *invalid*   можливо: книга повернута з читального залу бібліотекарю(?)
+1           1           0           abonement   книга на абонементі (returndate < today = штраф)
+1           1           1           *invalid*   можливо: книга повернута з абонементу бібліотекарю(?)
 
 
 Функції користувачів
@@ -124,12 +124,12 @@ KNOWN ISSUES
 ~~~~~~~~~~~~
 
 авторизація по імені користувача без паролю
-автоматичне створення читача при першому логіні (зразу зі статусом "active")
+автоматичне створення читача при першому логіні (зразу зі статусом active)
 неправильний (not permitted) доступ до данних позначається не кодом 403 а кодом 500 з текстом forbidden
 сортування каталогу може виконуватись на стороні серверу (для можливості видачі по сторінкам)
 
 it is possible to create a reader and a librarian with the same name
-it is possible to create a librarian named "admin"
+it is possible to create a librarian named admin
 date values should be handled in 'YYYY-MM-DD' format
 date values can be handled as integers also (sqlite issue)
 
@@ -141,21 +141,21 @@ test suite: тести залежні один від одного в рамка
 
 API реалізовано як запити GET протоколу HTTP з авторизацією за допомогою Cookie
 
-function	parameters						permissions			description
---------	----------						-----------			-----------
-/getuser 								"admin" "librarian" "reader"	logged user info
-/getusers	"name" "role" "state"					"admin" "librarian"		list users
-/setreader	"state" "name"						"admin"				set readers state to active/blocked
-/addlibrarian	"name"							"admin"				add librarian
-/dellibrarian	"name"							"admin"				remove librarian
-/setbook	"id" "title" "author" "publisher" "published"		"admin"				create or change book
-/delbook	"id"							"admin"				remove book
-/getbooks	"id" "title" "author" "publisher" "published" "inuse"	"admin" "librarian"		list books with details
-/querybooks	"title" "author" "order" "reverse"			"admin" "librarian" "reader"	query books suitable for the request
-/addrequest	"title" "author" "publisher" "published"		"reader"			create new request by author/title/publisher/published
-/setrequest	"id" "bookid" "returnterm"				"librarian"			serve request by id
-/delrequest	"id"							"librarian"                     for any unserved requests
-/delrequest	"id"							"reader"			for his unserved requests only
-/getrequests	"readername" "state"					"librarian"			list requests
-/getrequests	"state"							"reader"			list his requests
-/closerequest	"id"							"librarian"			close request, set 'returned' date, make book available
+function        parameters                                      permissions             description
+--------        ----------                                      -----------             -----------
+/getuser                                                        admin librarian reader  logged user info
+/getusers       name role state                                 admin librarian         list users
+/setreader      state name                                      admin                   set readers state to active/blocked
+/addlibrarian   name                                            admin                   add librarian
+/dellibrarian   name                                            admin                   remove librarian
+/setbook        id title author publisher published             admin                   create or change book
+/delbook        id                                              admin                   remove book
+/getbooks       id title author publisher published inuse       admin librarian         list books with details
+/querybooks     title author order reverse                      admin librarian reader  query books suitable for the request
+/addrequest     title author publisher published                reader                  create new request by author/title/publisher/published
+/setrequest     id bookid returnterm                            librarian               serve request by id
+/delrequest     id                                              librarian               for any unserved requests
+/delrequest     id                                              reader                  for his unserved requests only
+/getrequests    readername state                                librarian               list requests
+/getrequests    state                                           reader                  list his requests
+/closerequest   id                                              librarian               close request, set 'returned' date, make book available
