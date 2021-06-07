@@ -8,7 +8,8 @@
     <p><input id='name'/><button onclick='login()'>login</button></p>
     <script>
       function login() {
-          document.cookie = `libraryuser=${document.getElementById("name").value}; path=/; SameSite=Strict`
+          // NOTE: using urlencoding instead of usual base64encoding because chrome btoa doesn't work with utf-8
+          document.cookie = `libraryuser=${encodeURIComponent(document.getElementById("name").value)}; path=/; SameSite=Strict`
           window.location.href = "/";
       }
     </script>

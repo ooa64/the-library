@@ -18,7 +18,10 @@ namespace eval library {
     }
 
     proc stop {} {
-        if {[catch {close $::library::server; unset ::library::server} result]} {
+        try {
+            close $::library::server
+            unset ::library::server
+        } on error {result} {
             log "stop: $result"
         }
         done
@@ -34,11 +37,14 @@ namespace eval library {
         }
         sqlite3 ::library::db $dbfile -create true
         db eval {PRAGMA foreign_keys=1}
+        db eval {PRAGMA encoding="UTF-8"}
         foreach s [sqlscript $dbschema] {db eval $s}
     }
 
     proc done {} {
-        if {[catch {db close} result]} {
+        try {
+            db close
+        } on error {result} {
             log "done: $result"
         }
         log "database closed"
@@ -49,15 +55,15 @@ namespace eval library {
     proc listen {chan addr port} {
         log "$chan: connect from $addr:$port"
         try {
-            fconfigure $chan -translation {auto lf}
+            fconfigure $chan -translation {auto lf} -encoding "utf-8"
             if {[getrequest $chan request requestparams]} {
                 log "$chan: requested $request?$requestparams"
-                if {[getuser $chan user] && [userstate $user] ne "blocked"} {
-                    log "$chan: login $user ([userrole $user])"
-                    if {[userstate $user] eq ""} {
-                        newreader $user
+                if {[getusername $chan username] && [userstate $username] ne "blocked"} {
+                    log "$chan: login $username ([userrole $username])"
+                    if {[userstate $username] eq ""} {
+                        newreader $username
                     }
-                    send $chan 200 {*}[process $user $request $requestparams]
+                    send $chan 200 {*}[process $username $request $requestparams]
                 } else {
                     send $chan 200 "text/html" [readpage login.html]
                 }
@@ -82,10 +88,11 @@ namespace eval library {
         }]
     }
 
-    proc getuser {chan uservar} {
-        upvar $uservar user
+    proc getusername {chan usernamevar} {
+        upvar $usernamevar username
         while {[gets $chan s] >= 0} {
             if {[parseuser $s user]} {
+                set username [urldecode $user]
                 while {[gets $chan] ne ""} {}
                 return true
             } elseif {$s eq ""} {
@@ -95,11 +102,13 @@ namespace eval library {
         return false
     }
 
-    proc process {user request requestparams} {
+    proc process {username request requestparams} {
+        set userrole [userrole $username]
+        set params [params $requestparams]
         if {[string match "::library::/*" [info proc ::library::$request]]} {
-            return [list "application/json" [::library::$request $user [userrole $user] [params $requestparams]]]
+            return [list "application/json" [::library::$request $username $userrole $params]]
         } elseif {$request eq "/"} {
-            return [list "text/html" [readpage [userrole $user].html]]
+            return [list "text/html" [readpage $userrole.html]]
         } elseif {$request eq "/favicon.ico"} {
             return [list "image/gif" ""]
         }
@@ -120,7 +129,8 @@ namespace eval library {
             puts $chan ""
         }
         flush $chan
-        log "$chan: sent code $code, [string length $content] bytes"
+        log "$chan: sent code $code, [string bytelength $content] bytes"
+        debug "---\n$content\n---"
     }
 
     ### UTILS ###
@@ -146,7 +156,7 @@ namespace eval library {
         set d [dict create]
         foreach {- name value} [regexp -inline -all {(?:\?|&)([^=&]*)=([^&]*)} $params] {
             set n [string trim $name]
-            set v [string trim $value]
+            set v [string trim [urldecode $value]]
             if {$n ne "" && $v ne ""} {
                 dict append d $n $v
             }
@@ -154,16 +164,16 @@ namespace eval library {
         return $d
     }
 
-    proc userrole {name} {
-        db onecolumn {select role from user where state = 'active' and name = :name order by role}
+    proc userrole {username} {
+        db onecolumn {select role from user where state = 'active' and name = :username order by role}
     }
 
-    proc userstate {name} {
-        db onecolumn {select state from user where name = :name order by role}
+    proc userstate {username} {
+        db onecolumn {select state from user where name = :username order by role}
     }
 
-    proc newreader {name} {
-        db eval {insert into reader(name) values(:name)}
+    proc newreader {username} {
+        db eval {insert into reader(name) values(:username)}
     }
 
     proc sqlscript {filename} {
@@ -198,7 +208,7 @@ namespace eval library {
         set l {}
         foreach n $args {
             if {[dict exists $params $n]} {
-                uplevel set $n [urldecode [dict get $params $n]]
+                uplevel [list set $n [dict get $params $n]]
                 lappend l $n
             }
         }
@@ -250,7 +260,7 @@ namespace eval library {
     proc urldecode {str} {
         set str [string map [list + { } "\\" "\\\\"] $str]
         regsub -all -- {%([A-Fa-f0-9][A-Fa-f0-9])} $str {\\u00\1} str
-        return [encoding convertfrom [subst -novar -nocommand $str]]
+        encoding convertfrom "utf-8" [subst -novar -nocommand $str]
     }
 
     ### API ###
@@ -292,10 +302,17 @@ namespace eval library {
 
     proc /getbooks {username userrole params} {
         set vars [setvars $params "id" "title" "author" "publisher" "published" "inuse"]
+        if {[info exists inuse]} {
+            # WORKAROUND FOR SQLITE STRANGE BEHAVIOR: tclsqlite 3.36.0 needs native number for 'inuse' 
+            set inuse [expr {$inuse}]
+        }
         checkrole $userrole "admin" "librarian"
         dbarray [concat $::library::BOOK "inuse"] {
-            with t as (select book.*, exists (select 'x' from request where bookid = book.id) inuse from book)
-            select * from t where %s order by id
+            with bookinuse as (
+                select book.*,
+                    (select count(*) from request where bookid = book.id) inuse
+                from book)
+            select * from bookinuse where %s order by id
         } [wherefields $vars]
     }
 
@@ -380,8 +397,13 @@ namespace eval library {
     }    
 }
 
-if {$::argv0 eq [info script]} {
+if {$argv0 eq [info script]} {
     puts "The Library"
-    ::library::start
-    vwait forever
+    try {
+        library::start
+        vwait forever
+    } on error {result} {
+        library::log "$result"
+        library::debug "---\n$::errorInfo\n---"
+    }
 }

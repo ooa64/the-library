@@ -12,12 +12,17 @@ update idle
 
 proc get {call user} {
     set h [socket localhost $::library::HTTPPORT]
-    puts $h "GET $call HTTP/1.0\nCookie: libraryuser=$user\n"
+    puts $h "GET $call HTTP/1.0"
+    puts $h "Cookie: libraryuser=[topercents $user]\n"
     flush $h
     update ;# pass control to the server
     set s [read -nonewline $h]
     close $h
     return $s
+}
+
+proc topercents {str} {
+    regsub -all {(..)} [binary encode hex [encoding convertto identity $str]] {%\1\2}
 }
 
 test getempty-1.0.0 {get empty} -body {
@@ -240,6 +245,11 @@ test setrequest-1.4.22.2 {get books in use} -body {
     get "/getbooks?inuse=1" "admin"
 } -match glob -result {HTTP/1.1 200 *
 \[{"id":1,"title":"T","author":"A","publisher":null,"published":null,"inuse":1}]}
+
+test setrequest-1.4.22.2.1 {get books not in use} -body {
+    get "/getbooks?inuse=0" "admin"
+} -match glob -result {HTTP/1.1 200 *
+\[{"id":2,*},{"id":3,*}]}
 
 test setrequest-1.4.22.3 {delete books in use} -body {
     get "/delbook?id=1" "admin"

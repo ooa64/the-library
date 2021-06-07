@@ -4,13 +4,13 @@
     <meta charset='utf-8'>
     <title>library admin</title>
   </head>
-  <body onload=onLoad()>
-    <p id="login"></p>
-    <button onclick=logout()>logout</button>
+  <body onload='onLoad()'>
+    <p id='login'></p>
+    <button onclick='logout()'>logout</button>
     <hr/>
 
     <p>READERS:</p>
-    <table id="readers">
+    <table id='readers'>
       <tr>
           <th>name</th>
           <th>state</th>
@@ -19,7 +19,7 @@
     </table>
 
     <p>LIBRARIANS:</p>
-    <table id="librarians">
+    <table id='librarians'>
       <tr>
           <th>name</th>
           <th>action</th>
@@ -33,7 +33,7 @@
     </table>
 
     <p>BOOKS:</p>
-    <table id="books">
+    <table id='books'>
       <tr>
         <th>id</th>
         <th>title</th>
@@ -44,13 +44,13 @@
       </tr>
       </tr>
       <tr>
-        <td><input id="book.id"/></td>
-        <td><input id="book.title"/></td>
-        <td><input id="book.author"/></td>
-        <td><input id="book.publisher"/></td>
-        <td><input id="book.published"/></td>
+        <td><input id='book.id'/></td>
+        <td><input id='book.title'/></td>
+        <td><input id='book.author'/></td>
+        <td><input id='book.publisher'/></td>
+        <td><input id='book.published'/></td>
         <td>
-          <button onclick="saveBook()">save</button>
+          <button onclick='saveBook()'>save</button>
         </td>
       </tr>
     </table>
@@ -75,22 +75,21 @@
             t.removeChild(t.lastChild)
           }
           for (const user of json) {
-            t.appendChild(document.createElement('tr')).innerHTML = `
-              <td>${user.name}</td>
-              <td>${user.state}</td>
-              <td>
-                <button onclick=setReader('${user.name}','${user.state==="active"?"blocked":"active"}')>
-                  (un)block
-                </button>
-              </td>`
+            let r = t.appendChild(document.createElement('tr'))
+            r.innerHTML = `
+              <td><span class="name"></span></td>
+              <td><span class="state"></span></td>
+              <td><button class="block">(un)block</button></td>`
+            r.getElementsByClassName("name")[0].textContent = user.name
+            r.getElementsByClassName("state")[0].textContent = user.state
+            r.getElementsByClassName("block")[0].onclick = () => blockReader(user)
           }
         })
       }
-      function setReader(name, state) {
-        let p = new URLSearchParams({name: name, state: state})
-        fetch("/setreader?"+p).then(() => {
-          getReaders()
-        })
+      function blockReader(user) {
+        let s = user.state === "active" ? "blocked" : "active"
+        let p = new URLSearchParams({name: user.name, state: s})
+        fetch("/setreader?"+p).then(() => getReaders())
       }
       //
       function getLibrarians() {
@@ -99,28 +98,23 @@
           while (t.childNodes.length > 3) {
             t.removeChild(t.lastChild)
           }
-          for (const user of json) {
-            t.appendChild(document.createElement('tr')).innerHTML = `
-              <td>${user.name}</td>
-              <td>
-                <button onclick=delLibrarian('${user.name}')>
-                  delete
-                </button>
-              </td>`
+          for (const user of json) {   
+            let r = t.appendChild(document.createElement('tr'))
+            r.innerHTML = `
+              <td><span class='name'></span></td>
+              <td><button class='delete'>delete</button></td>`
+            r.getElementsByClassName("name")[0].textContent = user.name
+            r.getElementsByClassName("delete")[0].onclick = () => delLibrarian(user)  
           }
         })
       }
       function addLibrarian(name) {
         let p = new URLSearchParams({name: name})
-        fetch("/addlibrarian?"+p).then(() => {
-          getLibrarians()
-        })
+        fetch("/addlibrarian?"+p).then(() => getLibrarians())
       }
-      function delLibrarian(name) {
-        let p = new URLSearchParams({name: name})
-        fetch("/dellibrarian?"+p).then(() => {
-          getLibrarians()
-        })
+      function delLibrarian(user) {
+        let p = new URLSearchParams({name: user.name})
+        fetch("/dellibrarian?"+p).then(() => getLibrarians())
       }
       //
       function getBooks() {
@@ -130,50 +124,44 @@
             t.removeChild(t.lastChild)
           }
           for (const book of json) {
-            t.appendChild(document.createElement('tr')).innerHTML = `
-              <td>${book.id}</td>
-              <td>${book.title}</td>
-              <td>${book.author}</td>
-              <td>${book.publisher}</td>
-              <td>${book.published}</td>
-              <td>
-                <button onclick='editBook(${JSON.stringify(book)})'>
-                  edit
-                </button>
-                <button onclick='deleteBook(${book.id})'>
-                  delete
-                </button>
-              </td>`
+            let r = t.appendChild(document.createElement('tr'))
+            r.innerHTML = `
+              <td><span class='id'></span></td>
+              <td><span class='title'></span></td>
+              <td><span class='author'></span></td>
+              <td><span class='publisher'></span></td>
+              <td><span class='published'></span></td>
+              <td><button class='edit'>edit</button>
+                  <button class='delete'>delete</button></td>`
+            r.getElementsByClassName("id")[0].textContent = book.id
+            r.getElementsByClassName("title")[0].textContent = book.title
+            r.getElementsByClassName("author")[0].textContent = book.author
+            r.getElementsByClassName("publisher")[0].textContent = book.publisher
+            r.getElementsByClassName("published")[0].textContent = book.published
+            r.getElementsByClassName("edit")[0].onclick = () => editBook(book)
+            r.getElementsByClassName("delete")[0].onclick = () => deleteBook(book)
           }
         })
       }
       function editBook(book) {
         for (const f of ["id","title","author","publisher","published"]) {
-          document.getElementById("book."+f).value = book[f]
+          document.getElementById(`book.${f}`).value = book[f]
         }
       }
       function saveBook() {
         let p = new URLSearchParams()
         for (const f of ["id","title","author","publisher","published"]) {
-          p.append(f, document.getElementById("book."+f).value)
+          p.append(f, document.getElementById(`book.${f}`).value)
         }
-        fetch("/setbook?"+p).then(resp => {
-          if (resp.ok) {
-            this.getBooks()
-          } else {
-            resp.text().then(text => alert(resp.statusText+"\n"+text))
-          }
-        });
+        fetch("/setbook?"+p).then(resp => resp.ok ? this.getBooks() :
+          resp.text().then(text => alert(resp.statusText+"\n"+text))
+        )
       }
-      function deleteBook(bookid) {
-        let p = new URLSearchParams({id: bookid})
-        fetch("/delbook?"+p).then(resp => {
-          if (resp.ok) {
-            this.getBooks()
-          } else {
-            resp.text().then(text => alert(resp.statusText+"\n"+text))
-          }
-        });
+      function deleteBook(book) {
+        let p = new URLSearchParams({id: book.id})
+        fetch("/delbook?"+p).then(resp => resp.ok ? this.getBooks() :
+          resp.text().then(text => alert(resp.statusText+"\n"+text))
+        )
       }
       //
       function logout() {

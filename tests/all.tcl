@@ -8,4 +8,6 @@ proc tcltest::test args {
     uplevel 1 tcltest::__test $args
 }
 
+encoding system "utf-8"
+
 tcltest::runAllTests

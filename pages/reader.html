@@ -4,9 +4,9 @@
     <meta charset='utf-8'>
     <title>library reader</title>
   </head>
-  <body onload=onLoad()>
+  <body onload='onLoad()'>
     <p id='login'></p>
-    <button onclick=logout()>logout</button>
+    <button onclick='logout()'>logout</button>
     <hr/>
 
     <p>CATALOG:</p>
@@ -24,7 +24,7 @@
         <td></td>
         <td></td>
         <td>
-          <button onclick="getCatalog()">query</button>
+          <button onclick='getCatalog()'>query</button>
         </td>      
       </tr>
     </table>
@@ -73,37 +73,29 @@
             t.removeChild(t.lastChild)
           }
           for (const book of json) {
-            t.appendChild(document.createElement('tr')).innerHTML = `
-              <td>${book.title}</td>
-              <td>${book.author}</td>
-              <td>${book.publisher || ""}</td>
-              <td>${book.published || ""}</td>
-              <td>
-                <button onclick='addRequest(${JSON.stringify(book)})'>
-                  request
-                </button>
-              </td>`
+            let r = t.appendChild(document.createElement('tr'))
+            r.innerHTML = `
+              <td><span class='title'></span></td>
+              <td><span class='author'></span></td>
+              <td><span class='publisher'></span></td>
+              <td><span class='published'></span></td>
+              <td><button class='request'>request</button></td>`
+            r.getElementsByClassName("title")[0].textContent = book.title
+            r.getElementsByClassName("author")[0].textContent = book.author
+            r.getElementsByClassName("publisher")[0].textContent = book.publisher
+            r.getElementsByClassName("published")[0].textContent = book.published
+            r.getElementsByClassName("request")[0].onclick = () => addRequest(book)
           }
         })
       }
       //
       function addRequest(book) {
         // filter out null params
-        Object.keys(book).forEach(k => {
-          if (book[k] == null) {
-            delete book[k]
-          }
-        })
+        Object.keys(book).forEach(k => book[k] == null && delete book[k])
         let p = new URLSearchParams(book)
-        fetch("/addrequest?"+p).then(resp => {
-          if (resp.ok) {
-            this.getRequests()
-          } else {
-            resp.text().then(text => {
-              alert(resp.statusText+"\n"+text)
-            })
-          }
-        });      
+        fetch("/addrequest?"+p).then(resp => resp.ok ? this.getRequests() :
+            resp.text().then(text => alert(resp.statusText+"\n"+text))
+        )
       }
       function getRequests() {
         fetch("/getrequests").then(data => data.json()).then(json => {
@@ -113,34 +105,35 @@
           }
           for (const request of json) {
             let x = !!request.returnterm && ((Date.parse(request.returned) || Date.now()) >= Date.parse(request.returnterm))
-            t.appendChild(document.createElement('tr')).innerHTML = `
-              <td>${request.title}</td>
-              <td>${request.author}</td>
-              <td>${request.publisher || ""}</td>
-              <td>${request.published || ""}</td>
-              <td>${request.returnterm || ""}</td>
-              <td>${request.returned || ""}</td>
-              <td>${request.state}</td>
-              <td>${penaltyRate*x}</td>
-              <td>
-                <button ${request.state !== "requested" ? "hidden" : ""} onclick=deleteRequest(${request.id})>
-                  delete
-                </button>
-              </td>`
+            let r = t.appendChild(document.createElement('tr'))
+            r.innerHTML = `
+              <td><span class='title'></span></td>
+              <td><span class='author'></span></td>
+              <td><span class='publisher'></span></td>
+              <td><span class='published'></span></td>
+              <td><span class='returnterm'></span></td>
+              <td><span class='returned'></span></td>
+              <td><span class='state'></span></td>
+              <td><span class='penalty'></span></td>
+              <td><button class='delete'>delete</button></td>`
+            r.getElementsByClassName("title")[0].textContent = request.title
+            r.getElementsByClassName("author")[0].textContent = request.author
+            r.getElementsByClassName("publisher")[0].textContent = request.publisher
+            r.getElementsByClassName("published")[0].textContent = request.published
+            r.getElementsByClassName("returnterm")[0].textContent = request.returnterm
+            r.getElementsByClassName("returned")[0].textContent = request.returned
+            r.getElementsByClassName("state")[0].textContent = request.state
+            r.getElementsByClassName("penalty")[0].textContent = penaltyRate*x
+            r.getElementsByClassName("delete")[0].hidden = request.state !== "requested"
+            r.getElementsByClassName("delete")[0].onclick = () => deleteRequest(request)
           }
         })
       }
-      function deleteRequest(id) {
-        let p = new URLSearchParams({id: id})
-        fetch("/delrequest?id="+id).then(resp => {
-          if (resp.ok) {
-            this.getRequests()
-          } else {
-            resp.text().then(text => {
-              alert(resp.statusText+"\n"+text)
-            })
-          }
-        });
+      function deleteRequest(request) {
+        let p = new URLSearchParams({id: request.id})
+        fetch("/delrequest?"+p).then(resp => resp.ok ? this.getRequests() :
+          resp.text().then(text => alert(resp.statusText+"\n"+text))
+        )
       }
       //
       function logout() {

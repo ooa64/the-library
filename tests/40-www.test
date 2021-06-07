@@ -10,21 +10,26 @@ set ::library::HTTPPORT "9998"
 after idle library::start
 update idle
 
-# add users for tests
-get "/getuser" "reader"                              ;# autoregister reader
-get "/getuser" "blocked"                             ;# autoregister another reader
-get "/setreader?name=blocked&state=blocked" "admin"  ;# set blocked state for reader
-get "/addlibrarian?name=librarian" "admin"           ;# 
-
 proc get {call user} {
     set h [socket localhost $::library::HTTPPORT]
-    puts $h "GET $call HTTP/1.0\nCookie: libraryuser=$user\n"
+    puts $h "GET $call HTTP/1.0"
+    puts $h "Cookie: libraryuser=[topercents $user]\n"
     flush $h
     update ;# pass control to the server
     set s [read -nonewline $h]
     close $h
     return $s
 }
+
+proc topercents {str} {
+    regsub -all {(..)} [binary encode hex [encoding convertto identity $str]] {%\1\2}
+}
+
+# add users for tests
+get "/getuser" "reader"                              ;# autoregister reader
+get "/getuser" "blocked"                             ;# autoregister another reader
+get "/setreader?name=blocked&state=blocked" "admin"  ;# set blocked state for reader
+get "/addlibrarian?name=librarian" "admin"           ;# 
 
 test getroot-1.0.1 {get page, no user} -body {
     get "/" ""

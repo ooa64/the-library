@@ -4,9 +4,9 @@
     <meta charset='utf-8'>
     <title>library librarian</title>
   </head>
-  <body onload=onLoad()>
-    <p id="login"></p>
-    <button onclick=logout()>logout</button>
+  <body onload='onLoad()'>
+    <p id='login'></p>
+    <button onclick='logout()'>logout</button>
     <hr/>
 
     <p>REQUESTS:</p>
@@ -33,7 +33,7 @@
       </tr>
     </table>
 
-    <p>READER'S ABONEMENT: <select id="reader" onclick=getAbonement()></select></p>
+    <p>READER'S ABONEMENT: <select id='reader' onclick='getAbonement()'></select></p>
     <table id='abonement'>
       <tr>
         <th>bookid</th>
@@ -67,19 +67,20 @@
             t.removeChild(t.lastChild)
           }
           for (const request of json) {
-            t.appendChild(document.createElement('tr')).innerHTML = `
-              <td>${request.readername}</td>
-              <td>${request.title}</td>
-              <td>${request.author}</td>
-              <td>${request.publisher}</td>
-              <td>${request.published}</td>
-              <td>
-                return term
-                <input id='returnterm${request.id}'/>
-                <button onclick='satisfyRequest(${JSON.stringify(request)})'>
-                  satisfy
-                </button>
-              </td>`
+            let r = t.appendChild(document.createElement('tr'))
+            r.innerHTML = `
+              <td><span class='name'></span></td>
+              <td><span class='title'></span></td>
+              <td><span class='author'></span></td>
+              <td><span class='publisher'></span></td>
+              <td><span class='published'></span></td>
+              <td>return term <input id='returnterm${request.id}'/><button class='satisfy'>satisfy</button></td>`
+            r.getElementsByClassName("name")[0].textContent = request.readername
+            r.getElementsByClassName("title")[0].textContent = request.title
+            r.getElementsByClassName("author")[0].textContent = request.author
+            r.getElementsByClassName("publisher")[0].textContent = request.publisher
+            r.getElementsByClassName("published")[0].textContent = request.published
+            r.getElementsByClassName("satisfy")[0].onclick = () => satisfyRequest(request)
           }
         })
       }
@@ -120,29 +121,28 @@
         }
         fetch("/getrequests?state=reading").then(data => data.json()).then(json => {
           for (const request of json) {
-            t.appendChild(document.createElement('tr')).innerHTML = `
-              <td>${request.readername}</td>
-              <td>${request.title}</td>
-              <td>${request.author}</td>
-              <td>${request.publisher}</td>
-              <td>${request.published}</td>
-              <td>
-                <button onclick='updateReading(${request.id})'>
-                  return
-                </button>
-              </td>`
+            let r = t.appendChild(document.createElement('tr'))
+            r.innerHTML = `
+              <td><span class='name'></span></td>
+              <td><span class='title'></span></td>
+              <td><span class='author'></span></td>
+              <td><span class='publisher'></span></td>
+              <td><span class='published'></span></td>
+              <td><button class='close'>returned</button></td>`
+            r.getElementsByClassName("name")[0].textContent = request.readername
+            r.getElementsByClassName("title")[0].textContent = request.title
+            r.getElementsByClassName("author")[0].textContent = request.author
+            r.getElementsByClassName("publisher")[0].textContent = request.publisher
+            r.getElementsByClassName("published")[0].textContent = request.published
+            r.getElementsByClassName("close")[0].onclick = () => closeReading(request)
           }
         })
       }
-      function updateReading(requestid) {
-        let p = new URLSearchParams({id: requestid})
-        fetch("/closerequest?"+p).then(resp => {
-          if (resp.ok) {
-            this.getReading()
-          } else {
+      function closeReading(request) {
+        let p = new URLSearchParams({id: request.id})
+        fetch("/closerequest?"+p).then(resp => resp.ok ? this.getReading() :
             resp.text().then(text => alert(resp.statusText+"\n"+text))
-          }
-        });
+        )
       }
       //
       function getReaders() {
@@ -159,36 +159,36 @@
         while (t.childNodes.length > 2) {
           t.removeChild(t.lastChild)
         }
-        let r = document.getElementById('reader').value;
-        if (r !== "") {
-          let p = new URLSearchParams({readername: r, state: 'abonement'})
+        let n = document.getElementById('reader').value;
+        if (n !== "") {
+          let p = new URLSearchParams({readername: n, state: 'abonement'})
           fetch("/getrequests?"+p).then(data => data.json()).then(json => {
             for (const request of json) {
-              t.appendChild(document.createElement('tr')).innerHTML = `
-                <td>${request.bookid}</td>
-                <td>${request.title}</td>
-                <td>${request.author}</td>
-                <td>${request.publisher}</td>
-                <td>${request.published}</td>
-                <td>${request.returnterm}</td>
-                <td>
-                  <button onclick='updateAbonement(${request.id})'>
-                    returned
-                  </button>
-                </td>`
+              let r = t.appendChild(document.createElement('tr'))
+              r.innerHTML = `
+                <td><span class='bookid'></span></td>
+                <td><span class='title'></span></td>
+                <td><span class='author'></span></td>
+                <td><span class='publisher'></span></td>
+                <td><span class='published'></span></td>
+                <td><span class='returnterm'></span></td>
+                <td><button class='close'>returned</button></td>`
+              r.getElementsByClassName("bookid")[0].textContent = request.bookid
+              r.getElementsByClassName("title")[0].textContent = request.title
+              r.getElementsByClassName("author")[0].textContent = request.author
+              r.getElementsByClassName("publisher")[0].textContent = request.publisher
+              r.getElementsByClassName("published")[0].textContent = request.published
+              r.getElementsByClassName("returnterm")[0].textContent = request.returnterm
+              r.getElementsByClassName("close")[0].onclick = () => closeAbonement(request)
             }
           })
         }
-      } 
-      function updateAbonement(requestid) {
-        let p = new URLSearchParams({id: requestid})
-        fetch("/closerequest?"+p).then(resp => {
-          if (resp.ok) {
-            this.getAbonement()
-          } else {
+      }
+      function closeAbonement(request) {
+        let p = new URLSearchParams({id: request.id})
+        fetch("/closerequest?"+p).then(resp => resp.ok ? this.getAbonement() :
             resp.text().then(text => alert(resp.statusText+"\n"+text))
-          }
-        });
+        )
       }
       //
       function logout() {
