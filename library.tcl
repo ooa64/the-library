@@ -18,13 +18,9 @@ namespace eval library {
     }
 
     proc stop {} {
-        try {
-            close $::library::server
-            unset ::library::server
-            done
-        } on error {result} {
-            log "stop: $result"
-        }
+        close $::library::server
+        unset ::library::server
+        done
         log "server stopped"
     }
 
