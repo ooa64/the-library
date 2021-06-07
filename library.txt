@@ -51,7 +51,7 @@ Linux:
 Використані інструменти
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-tcl8.6 + tclsqlite3
+tcl8.6 + tclsqlite3 (3.31+json1)
 html/javascript у сучасному веб-браузері (ecmascript 2015?)
 Додаткові бібліотеки не використовуються
 
@@ -71,7 +71,7 @@ html/javascript у сучасному веб-браузері (ecmascript 2015?)
 
 	bookid      returnterm  returned    state       description
 	------      ----------  --------    -----       -----------
-	0	    0           0           requested   книгу замовлено читачем але не видано бібліотекарем
+	0           0           0           requested   книгу замовлено читачем але не видано бібліотекарем
 	0           0           1           returned    книгу повернено з читального залу до сховища
 	0           1           0           lost        книгу загублено на абонементі читача(?)
 	0           1           1           returned    повернуто з абонементу в сховище (returndate < returned = штраф)
@@ -92,7 +92,7 @@ html/javascript у сучасному веб-браузері (ecmascript 2015?)
 Бібліотекар
 - list readers
 - list requests
-- serve request = fill request: set bookid and returnterm (for abonement)
+- serve request = set bookid and returnterm (for abonement)
 - close request = set bookid to null, set returned as current date
 
 Читач
@@ -126,7 +126,6 @@ KNOWN ISSUES
 авторизація по імені користувача без паролю
 автоматичне створення читача при першому логіні (зразу зі статусом "active")
 неправильний (not permitted) доступ до данних позначається не кодом 403 а кодом 500 з текстом forbidden
-деякі символи (не букви-цифри) записуються в базу як urlencoded(?), наприклад "'" -> "%27"
 сортування каталогу може виконуватись на стороні серверу (для можливості видачі по сторінкам)
 
 it is possible to create a reader and a librarian with the same name
@@ -144,7 +143,7 @@ API реалізовано як запити GET протоколу HTTP з ав
 
 function	parameters						permissions			description
 --------	----------						-----------			-----------
-/getuser 								"admin" "librarian" "reader"
+/getuser 								"admin" "librarian" "reader"	logged user info
 /getusers	"name" "role" "state"					"admin" "librarian"		list users
 /setreader	"state" "name"						"admin"				set readers state to active/blocked
 /addlibrarian	"name"							"admin"				add librarian
