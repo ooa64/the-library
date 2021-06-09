@@ -25,10 +25,10 @@
           <th>action</th>
       </tr>
       <tr>
-          <th><input id='librarian'/></th>
-          <th>
+          <td><input id='librarian'/></td>
+          <td>
             <button onclick='addLibrarian(document.getElementById("librarian").value)'>add</button>
-          </th>
+          </td>
       </tr>
     </table>
 
@@ -39,7 +39,7 @@
         <th>title</th>
         <th>author</th>
         <th>publisher</th>
-        <th>published</th>
+        <th>published like YYYY-MM-DD</th>
         <th>action</th>
       </tr>
       </tr>
@@ -51,6 +51,7 @@
         <td><input id='book.published'/></td>
         <td>
           <button onclick='saveBook()'>save</button>
+          <button onclick='clearBook()'>clear</button>
         </td>
       </tr>
     </table>
@@ -63,19 +64,19 @@
         getBooks()
       }
       function getUser() {
-        fetch("/getuser").then(resp => resp.json()).then(json => {
-          document.getElementById("login").textContent = `${json.role}: ${json.name}`
-        })
+        fetch("/getuser").then(resp => resp.json()).then(json =>
+          document.getElementById("login").textContent = json.role+": "+json.name
+        )
       }
       //
       function getReaders() {
         fetch("/getusers?role=reader").then(resp => resp.json()).then(json => {
-          let t = document.getElementById('readers').tBodies[0];
+          let t = document.getElementById("readers").tBodies[0];
           while (t.childNodes.length > 2) {
             t.removeChild(t.lastChild)
           }
           for (const user of json) {
-            let r = t.appendChild(document.createElement('tr'))
+            let r = t.appendChild(document.createElement("tr"))
             r.innerHTML = `
               <td><span class="name"></span></td>
               <td><span class="state"></span></td>
@@ -94,12 +95,12 @@
       //
       function getLibrarians() {
         fetch("/getusers?role=librarian").then(resp => resp.json()).then(json => {
-          let t = document.getElementById('librarians').tBodies[0]
+          let t = document.getElementById("librarians").tBodies[0]
           while (t.childNodes.length > 3) {
             t.removeChild(t.lastChild)
           }
           for (const user of json) {   
-            let r = t.appendChild(document.createElement('tr'))
+            let r = t.appendChild(document.createElement("tr"))
             r.innerHTML = `
               <td><span class='name'></span></td>
               <td><button class='delete'>delete</button></td>`
@@ -119,12 +120,12 @@
       //
       function getBooks() {
         fetch("/getbooks").then(resp => resp.json()).then(json => {
-          let t = document.getElementById('books').tBodies[0]
+          let t = document.getElementById("books").tBodies[0]
           while (t.childNodes.length > 3) {
             t.removeChild(t.lastChild)
           }
           for (const book of json) {
-            let r = t.appendChild(document.createElement('tr'))
+            let r = t.appendChild(document.createElement("tr"))
             r.innerHTML = `
               <td><span class='id'></span></td>
               <td><span class='title'></span></td>
@@ -143,15 +144,20 @@
           }
         })
       }
+      function clearBook(book) {
+        for (const f of ["id","title","author","publisher","published"]) {
+          document.getElementById("book."+f).value = null
+        }
+      }
       function editBook(book) {
         for (const f of ["id","title","author","publisher","published"]) {
-          document.getElementById(`book.${f}`).value = book[f]
+          document.getElementById("book."+f).value = book[f]
         }
       }
       function saveBook() {
         let p = new URLSearchParams()
         for (const f of ["id","title","author","publisher","published"]) {
-          p.append(f, document.getElementById(`book.${f}`).value)
+          p.append(f, document.getElementById("book."+f).value)
         }
         fetch("/setbook?"+p).then(resp => resp.ok ? this.getBooks() :
           resp.text().then(text => alert(resp.statusText+"\n"+text))
