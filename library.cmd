@@ -1,1 +1,1 @@
-@tclkitsh.exe library.tcl 
+@tclkitsh.exe library.tcl %*
