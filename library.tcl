@@ -84,7 +84,7 @@ namespace eval library {
         upvar $usernamevar username
         while {[gets $chan s] >= 0} {
             if {[parseuser $s user]} {
-                set username [urldecode $user]
+                set username [string trim [urldecode $user]]
                 while {[gets $chan] ne ""} {}
                 return true
             } elseif {$s eq ""} {
