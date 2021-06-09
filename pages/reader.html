@@ -52,9 +52,9 @@
         getRequests()
       }
       function getUser() {
-        fetch("/getuser").then(data => data.json()).then(json => {
-          document.getElementById("login").textContent = `${json.role}: ${json.name}`
-        })
+        fetch("/getuser").then(data => data.json()).then(json =>
+          document.getElementById("login").textContent = json.role+": "+json.name
+        )
       }
       //
       function getCatalog() {
@@ -68,12 +68,12 @@
           }
         }
         fetch("/querybooks?"+p).then(data => data.json()).then(json => {
-          let t = document.getElementById('catalog').tBodies[0];
+          let t = document.getElementById("catalog").tBodies[0];
           while (t.childNodes.length > 3) {
             t.removeChild(t.lastChild)
           }
           for (const book of json) {
-            let r = t.appendChild(document.createElement('tr'))
+            let r = t.appendChild(document.createElement("tr"))
             r.innerHTML = `
               <td><span class='title'></span></td>
               <td><span class='author'></span></td>
@@ -99,13 +99,13 @@
       }
       function getRequests() {
         fetch("/getrequests").then(data => data.json()).then(json => {
-          let t = document.getElementById('requests').tBodies[0];
+          let t = document.getElementById("requests").tBodies[0];
           while (t.childNodes.length > 2) {
             t.removeChild(t.lastChild)
           }
           for (const request of json) {
             let x = !!request.returnterm && ((Date.parse(request.returned) || Date.now()) >= Date.parse(request.returnterm))
-            let r = t.appendChild(document.createElement('tr'))
+            let r = t.appendChild(document.createElement("tr"))
             r.innerHTML = `
               <td><span class='title'></span></td>
               <td><span class='author'></span></td>
@@ -124,8 +124,8 @@
             r.getElementsByClassName("returned")[0].textContent = request.returned
             r.getElementsByClassName("state")[0].textContent = request.state
             r.getElementsByClassName("penalty")[0].textContent = penaltyRate*x
-            r.getElementsByClassName("delete")[0].hidden = request.state !== "requested"
             r.getElementsByClassName("delete")[0].onclick = () => deleteRequest(request)
+            r.getElementsByClassName("delete")[0].hidden = request.state !== "requested"
           }
         })
       }

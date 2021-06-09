@@ -49,12 +49,13 @@ namespace eval library {
         try {
             fconfigure $chan -translation {auto lf} -encoding "utf-8"
             if {[getrequest $chan request requestparams]} {
-                log "$chan: requested $request?$requestparams"
+                log "$chan: requested $request$requestparams"
                 if {[getusername $chan username] && [userstate $username] ne "blocked"} {
-                    log "$chan: login $username ([userrole $username])"
                     if {[userstate $username] eq ""} {
+                        log "$chan: new reader $username registered"
                         newreader $username
                     }
+                    log "$chan: login $username ([userrole $username])"
                     send $chan 200 {*}[process $username $request $requestparams]
                 } else {
                     send $chan 200 "text/html" [readpage login.html]
@@ -121,8 +122,8 @@ namespace eval library {
             puts $chan ""
         }
         flush $chan
+        debug "---\n[string range $content 0 1024]\n---"
         log "$chan: sent code $code, [string bytelength $content] bytes"
-        debug "---\n$content\n---"
     }
 
     ### UTILS ###
@@ -154,6 +155,12 @@ namespace eval library {
             }
         }
         return $d
+    }
+
+    proc urldecode {str} {
+        set str [string map [list + { } "\\" "\\\\"] $str]
+        regsub -all -- {%([A-Fa-f0-9][A-Fa-f0-9])} $str {\\u00\1} str
+        encoding convertfrom "utf-8" [subst -novar -nocommand $str]
     }
 
     proc userrole {username} {
@@ -249,12 +256,6 @@ namespace eval library {
         error "no data"
     }
 
-    proc urldecode {str} {
-        set str [string map [list + { } "\\" "\\\\"] $str]
-        regsub -all -- {%([A-Fa-f0-9][A-Fa-f0-9])} $str {\\u00\1} str
-        encoding convertfrom "utf-8" [subst -novar -nocommand $str]
-    }
-
     ### API ###
 
     variable USER    {name role state}
@@ -295,7 +296,7 @@ namespace eval library {
     proc /getbooks {username userrole params} {
         set vars [setvars $params "id" "title" "author" "publisher" "published" "inuse"]
         if {[info exists inuse]} {
-            # WORKAROUND FOR SQLITE STRANGE BEHAVIOR: tclsqlite 3.36.0 needs native number for 'inuse'
+            # WORKAROUND: tclsqlite 3.36.0 needs native number for 'inuse'
             set inuse [expr {$inuse}]
         }
         checkrole $userrole "admin" "librarian"

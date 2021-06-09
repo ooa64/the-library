@@ -17,7 +17,7 @@
         <th>author</th>
         <th>publisher</th>
         <th>published</th>
-        <th>action</th>
+        <th>action, term like YYYY-MM-DD</th>
       </tr>
     </table>
 
@@ -55,19 +55,19 @@
         getAbonement()        
       }
       function getUser() {
-        fetch("/getuser").then(data => data.json()).then(json => {
-          document.getElementById("login").textContent = `${json.role}: ${json.name}`
-        })
+        fetch("/getuser").then(data => data.json()).then(json =>
+          document.getElementById("login").textContent = json.role+": "+json.name
+        )
       }
       //
       function getRequests() {
         fetch("/getrequests?state=requested").then(data => data.json()).then(json => {
-          let t = document.getElementById('requests').tBodies[0];
+          let t = document.getElementById("requests").tBodies[0];
           while (t.childNodes.length > 2) {
             t.removeChild(t.lastChild)
           }
           for (const request of json) {
-            let r = t.appendChild(document.createElement('tr'))
+            let r = t.appendChild(document.createElement("tr"))
             r.innerHTML = `
               <td><span class='name'></span></td>
               <td><span class='title'></span></td>
@@ -88,8 +88,8 @@
         let p = new URLSearchParams({
           title: request.title,
           author: request.author,
-          publisher: request.publisher || '',
-          published: request.published || '',
+          publisher: request.publisher || "",
+          published: request.published || "",
           inuse: 0
         })
         fetch("/getbooks?"+p).then(resp => resp.json()).then(json => {
@@ -97,7 +97,7 @@
             let p = new URLSearchParams({
               id: request.id,
               bookid: json[0].id,
-              returnterm: document.getElementById('returnterm'+request.id).value
+              returnterm: document.getElementById("returnterm"+request.id).value
             })
             fetch("/setrequest?"+p).then(resp => {
               if (resp.ok) {
@@ -128,13 +128,16 @@
               <td><span class='author'></span></td>
               <td><span class='publisher'></span></td>
               <td><span class='published'></span></td>
-              <td><button class='close'>returned</button></td>`
+              <td><button class='close'>returned</button>
+                  <button class='delete'>delete</button></td>`
             r.getElementsByClassName("name")[0].textContent = request.readername
             r.getElementsByClassName("title")[0].textContent = request.title
             r.getElementsByClassName("author")[0].textContent = request.author
             r.getElementsByClassName("publisher")[0].textContent = request.publisher
             r.getElementsByClassName("published")[0].textContent = request.published
             r.getElementsByClassName("close")[0].onclick = () => closeReading(request)
+            r.getElementsByClassName("delete")[0].onclick = () => deleteRequest(request)
+            r.getElementsByClassName("delete")[0].hidden = request.state !== "requested"
           }
         })
       }
