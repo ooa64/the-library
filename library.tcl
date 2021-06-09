@@ -390,12 +390,13 @@ namespace eval library {
 }
 
 if {$argv0 eq [info script]} {
-    puts "The Library"
+    puts "The Library\n"
     try {
+        set library::DEBUG [expr {[lsearch "-debug" $argv] >= 0}]
         library::start
         vwait forever
     } on error {result} {
-        library::log "$result"
         library::debug "---\n$::errorInfo\n---"
+        library::log "$result"
     }
 }
