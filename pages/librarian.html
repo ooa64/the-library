@@ -147,11 +147,13 @@
       //
       function getReaders() {
         fetch("/getusers?role=reader").then(resp => resp.json()).then(json => {
-          let h = "<option value=''></option>"
+          let s = document.getElementById('reader')
+          let o = s.appendChild(document.createElement('option'))
           for (const user of json) {
-            h += `<option value='${user.name}'>${user.name}</option>`
-          }          
-          document.getElementById('reader').innerHTML = h
+            let o = s.appendChild(document.createElement('option'))
+            o.textContent = user.name
+            o.value = user.name
+          }
         })
       }
       function getAbonement() {
