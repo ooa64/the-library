@@ -104,12 +104,10 @@ namespace eval library {
     proc process {username request requestparams} {
         set userrole [userrole $username]
         set params [params $requestparams]
-        if {[string match "::library::/*" [info proc ::library::$request]]} {
-            return [list "application/json" [::library::$request $username $userrole $params]]
-        } elseif {$request eq "/"} {
+        if {$request eq "/"} {
             return [list "text/html" [readpage $userrole.html]]
-        } elseif {$request eq "/favicon.ico"} {
-            return [list "image/gif" ""]
+        } elseif {[string match "::library::/*" [info proc ::library::$request]]} {
+            return [list "application/json" [::library::$request $username $userrole $params]]
         }
         error "invalid api call"
     }
