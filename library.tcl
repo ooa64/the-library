@@ -50,21 +50,27 @@ namespace eval library {
             fconfigure $chan -translation {auto lf} -encoding "utf-8"
             if {[getrequest $chan request requestparams]} {
                 log "$chan: requested $request$requestparams"
-                if {[getusername $chan username] && [userstate $username] ne "blocked"} {
-                    if {[userstate $username] eq ""} {
-                        log "$chan: new reader $username registered"
-                        newreader $username
-                    }
-                    log "$chan: login $username ([userrole $username])"
-                    send $chan 200 {*}[process $username $request $requestparams]
+                if {$request eq "/favicon.ico"} {
+                    # dismiss an annoying request
+                    send $chan 200 "" ""
                 } else {
-                    send $chan 200 "text/html" [readpage login.html]
+                    # do the job
+                    if {[getusername $chan username] && [userstate $username] ne "blocked"} {
+                        if {[userstate $username] eq ""} {
+                            log "$chan: new reader $username registered"
+                            newreader $username
+                        }
+                        log "$chan: login $username ([userrole $username])"
+                        send $chan 200 {*}[process $username $request $requestparams]
+                    } else {
+                        send $chan 200 "text/html" [readpage login.html]
+                    }
                 }
             } else {
                 send $chan 400 "text/plain" "bad request"
             }
         } on error {result} {
-            debug "---\n$::errorInfo\n---"
+            debug {listen} {$::errorInfo}
             send $chan 500 "text/plain" $result
         }
         close $chan
