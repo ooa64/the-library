@@ -12,7 +12,7 @@ namespace eval library {
     variable server
 
     proc start {} {
-        log "server startup, use admin login on http://localhost:$::library::HTTPPORT/"
+        log "server startup, use the admin login at http://localhost:$::library::HTTPPORT/"
         init $::library::DBSCHEMA $::library::DBFILE
         set ::library::server [socket -server ::library::listen $::library::HTTPPORT]
     }
@@ -35,6 +35,10 @@ namespace eval library {
         db eval {PRAGMA foreign_keys=1}
         db eval {PRAGMA encoding="UTF-8"}
         foreach s [sqlscript $dbschema] {db eval $s}
+        if {$::library::DEBUG} {
+            trace add execution ::library::db enter \
+                    {apply {{cmd op} {::library::debug [lindex [info level -1] 0] $cmd}}}
+        }
     }
 
     proc done {} {
@@ -118,6 +122,7 @@ namespace eval library {
             400 "Bad Request"
             500 "Server Error"
         }
+        debug {send} {[string range $content 0 512]}
         puts $chan "HTTP/1.1 $code $codetext($code)\nConnection: close"
         if {$contenttype ne ""} {
             puts $chan "Content-Type: $contenttype\nContent-Length: [string bytelength $content]\n"
@@ -126,7 +131,6 @@ namespace eval library {
             puts $chan ""
         }
         flush $chan
-        debug "---\n[string range $content 0 1024]\n---"
         log "$chan: sent code $code, [string bytelength $content] bytes"
     }
 
@@ -196,7 +200,8 @@ namespace eval library {
 
     proc debug {args} {
         if {$::library::DEBUG} {
-            log [join $args]
+            catch {uplevel [list subst [join $args \n]]} s
+            catch {puts stderr "DEBUG: $s"}
         }
     }
 
@@ -226,21 +231,18 @@ namespace eval library {
 
     proc dbobject {props sql args} {
         # NOTE: execute query in the caller frame to use sqlite variable binding
-        debug [format [format {select json_object(%s) json from (%s)} [jsonfields $props] $sql] {*}$args]]
         uplevel [list db onecolumn [format \
                 [format {select json_object(%s) json from (%s)} [jsonfields $props] $sql] {*}$args]]
     }
 
     proc dbarray {props sql args} {
         # NOTE: executes query in the caller frame to use sqlite variable binding
-        debug [format [format {select json_group_array(json_object(%s)) json from (%s)} [jsonfields $props] $sql] {*}$args]]
         uplevel [list db onecolumn [format \
                 [format {select json_group_array(json_object(%s)) json from (%s)} [jsonfields $props] $sql] {*}$args]]
     }
 
     proc dbupdate {sql args} {
         # NOTE: executes query in the caller frame to use sqlite variable binding
-        debug [format $sql {*}$args]
         uplevel [list db onecolumn [format $sql {*}$args]]
     }
 
@@ -401,7 +403,7 @@ if {$argv0 eq [info script]} {
         library::start
         vwait forever
     } on error {result} {
-        library::debug "---\n$::errorInfo\n---"
+        library::debug {$::errorInfo}
         library::log "$result"
     }
 }
