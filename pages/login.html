@@ -5,12 +5,15 @@
     <title>library login</title>
   </head>
   <body>
-    <p><input id='name'/><button onclick='login()'>login</button></p>
+    <!-- NOTE: using form to have autocomplete -->
+    <form action='/' onsubmit='login()' autocomplete='on'>
+      <input id='name'/>
+      <button type='submit'>login</button>
+    </form>
     <script>
       function login() {
-          // NOTE: using urlencoding instead of usual base64encoding because chrome btoa doesn't work with utf-8
-          document.cookie = `libraryuser=${encodeURIComponent(document.getElementById("name").value)}; path=/; SameSite=Strict`
-          window.location.href = "/";
+        // NOTE: not using base64 encoding because chrome btoa doesn't work with utf-8
+        document.cookie = `libraryuser=${encodeURIComponent(document.getElementById("name").value)}; path=/; SameSite=Strict`
       }
     </script>
   </body>

@@ -7,7 +7,7 @@
   <body onload='onLoad()'>
     <p id='login'></p>
     <button onclick='logout()'>logout</button>
-    <hr/>
+    <hr>
 
     <p>READERS:</p>
     <table id='readers'>
@@ -25,10 +25,8 @@
           <th>action</th>
       </tr>
       <tr>
-          <td><input id='librarian'/></td>
-          <td>
-            <button onclick='addLibrarian(document.getElementById("librarian").value)'>add</button>
-          </td>
+          <th><input id='librarian'/></th>
+          <th><button onclick='addLibrarian(document.getElementById("librarian").value)'>add</button></th>
       </tr>
     </table>
 
@@ -39,20 +37,20 @@
         <th>title</th>
         <th>author</th>
         <th>publisher</th>
-        <th>published like YYYY-MM-DD</th>
+        <th>published</th>
         <th>action</th>
       </tr>
       </tr>
       <tr>
-        <td><input id='book.id'/></td>
-        <td><input id='book.title'/></td>
-        <td><input id='book.author'/></td>
-        <td><input id='book.publisher'/></td>
-        <td><input id='book.published'/></td>
-        <td>
+        <th><input id='book.id'/></th>
+        <th><input id='book.title'/></th>
+        <th><input id='book.author'/></th>
+        <th><input id='book.publisher'/></th>
+        <th><input id='book.published' type='date'/></th>
+        <th>
           <button onclick='saveBook()'>save</button>
           <button onclick='clearBook()'>clear</button>
-        </td>
+        </th>
       </tr>
     </table>
 
@@ -118,6 +116,11 @@
         fetch("/dellibrarian?"+p).then(() => getLibrarians())
       }
       //
+      function forinput(func) {
+        for (const f of ["id","title","author","publisher","published"]) {
+          func(f, document.getElementById("book."+f))
+        }
+      }
       function getBooks() {
         fetch("/getbooks").then(resp => resp.json()).then(json => {
           let t = document.getElementById("books").tBodies[0]
@@ -145,20 +148,14 @@
         })
       }
       function clearBook(book) {
-        for (const f of ["id","title","author","publisher","published"]) {
-          document.getElementById("book."+f).value = null
-        }
+        forinput((f,e) => e.value = null)
       }
       function editBook(book) {
-        for (const f of ["id","title","author","publisher","published"]) {
-          document.getElementById("book."+f).value = book[f]
-        }
+        forinput((f,e) => e.value = book[f])
       }
       function saveBook() {
         let p = new URLSearchParams()
-        for (const f of ["id","title","author","publisher","published"]) {
-          p.append(f, document.getElementById("book."+f).value)
-        }
+        forinput((f,e) => p.append(f, e.value))
         fetch("/setbook?"+p).then(resp => resp.ok ? this.getBooks() :
           resp.text().then(text => alert(resp.statusText+"\n"+text))
         )
@@ -179,7 +176,10 @@
       table, th, td {
         border: 1px solid black;
         border-collapse: collapse;
-        padding: 10px;
+        padding: 4px;
+      }
+      th {
+        background: lightgrey;
       }
     </style>
   </body>

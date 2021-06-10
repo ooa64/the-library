@@ -7,7 +7,7 @@
   <body onload='onLoad()'>
     <p id='login'></p>
     <button onclick='logout()'>logout</button>
-    <hr/>
+    <hr>
 
     <p>REQUESTS:</p>
     <table id='requests'>
@@ -17,7 +17,7 @@
         <th>author</th>
         <th>publisher</th>
         <th>published</th>
-        <th>action, term like YYYY-MM-DD</th>
+        <th>action, set term for abonement</th>
       </tr>
     </table>
 
@@ -74,7 +74,7 @@
               <td><span class='author'></span></td>
               <td><span class='publisher'></span></td>
               <td><span class='published'></span></td>
-              <td>return term <input id='returnterm${request.id}'/><button class='satisfy'>satisfy</button></td>`
+              <td>return term <input id='returnterm${request.id}' type='date'/><button class='satisfy'>satisfy</button></td>`
             r.getElementsByClassName("name")[0].textContent = request.readername
             r.getElementsByClassName("title")[0].textContent = request.title
             r.getElementsByClassName("author")[0].textContent = request.author
@@ -205,8 +205,11 @@
       table, th, td {
         border: 1px solid black;
         border-collapse: collapse;
-        padding: 10px;
+        padding: 4px;
       }
+      th {
+        background: lightgrey;
+      }    
     </style>
   </body>
 </html>
