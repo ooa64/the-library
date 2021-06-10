@@ -93,7 +93,7 @@ namespace eval library {
             if {[parseuser $s user]} {
                 set username [string trim [urldecode $user]]
                 while {[gets $chan] ne ""} {}
-                return true
+                return [expr {$username ne ""}]
             } elseif {$s eq ""} {
                 break
             }
