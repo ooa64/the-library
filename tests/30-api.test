@@ -179,12 +179,12 @@ test querybooks-1.4.0 {empty query by admin} -body {
 \[]}
 
 test querybooks-1.4.1 {empty query by librarian} -body {
-    get "/querybooks?title=nonexistant" "admin"
+    get "/querybooks?title=nonexistant" "librarian"
 } -match glob -result {HTTP/1.1 200 *
 \[]}
 
 test querybooks-1.4.2 {empty query by reader} -body {
-    get "/querybooks?title=nonexistant" "admin"
+    get "/querybooks?title=nonexistant" "reader"
 } -match glob -result {HTTP/1.1 200 *
 \[]}
 
