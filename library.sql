@@ -1,15 +1,18 @@
 
 create table if not exists reader (
     name        text primary key,
-    state       text default 'active' check (state in ('active','blocked')));
+    state       text default 'active' check (state in ('active','blocked')),
+    role        text generated always default 'reader');
 /
 create table if not exists librarian (
-    name        text primary key);
+    name        text primary key,
+    state       text generated always default 'active',
+    role        text generated always default 'librarian');
 /
 -- NOTE: role sort order is significant: admin, librarian, reader
 create view if not exists user (name, state, role) as
-    select name,    state,    'reader'    from reader union all
-    select name,    'active', 'librarian' from librarian union all
+    select name,    state,    role    from reader union all
+    select name,    state,    role    from librarian union all
     select 'admin', 'active', 'admin';
 /
 create table if not exists book (
