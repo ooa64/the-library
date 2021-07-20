@@ -2,7 +2,7 @@ package require tcltest
 namespace import -force ::tcltest::*
 
 
-source library.tcl
+source [file join [testsDirectory] .. library.tcl]
 
 foreach {n i c m u} {
     0 ""                  0 "" ""

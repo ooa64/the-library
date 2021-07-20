@@ -2,14 +2,15 @@ package require tcltest
 namespace import -force ::tcltest::*
 
 
-source library.tcl
+source [file join [testsDirectory] .. library.tcl]
 
 catch {file delete [file join [testsDirectory] "test.db"]}
 
 set library::DBFILE [file join [testsDirectory] "test.db"]
-set library::DBSCHEMA "library.sql"
+set library::DBSCHEMA [file join [testsDirectory] ".." "library.sql"]
 set library::HTTPPORT 9998
 set library::DEBUG 1
+proc bgerror s {puts stderr $s; exit 1}
 after idle library::start
 update idle
 

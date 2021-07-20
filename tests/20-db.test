@@ -2,11 +2,14 @@ package require tcltest
 namespace import -force ::tcltest::*
 
 
-source library.tcl
+source [file join [testsDirectory] .. library.tcl]
 
 catch {file delete [file join [testsDirectory] "test.db"]}
 
-library::init library.sql [file join [testsDirectory] "test.db"]
+set library::DBFILE [file join [testsDirectory] "test.db"]
+set library::DBSCHEMA [file join [testsDirectory] ".." "library.sql"]
+
+library::init $library::DBSCHEMA $library::DBFILE
 
 test userperm-1.0.1 {userperm empty} {
     library::userrole ""
