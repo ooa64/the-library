@@ -9,7 +9,7 @@ DBFILE = "library.db"
 DBSCHEMA = "library.sql"
 PAGEROOT = "pages"
 HTTPPORT = 9999
-DEBUG = 1
+DEBUG = 0
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -179,8 +179,9 @@ def check_role(role, permits):
 
 def query_onecolumn(sql, params):
     if DEBUG:
-        print("sql:",sql)
-        print("params:",params)
+        from sys import stderr
+        stderr.write("SQL: %s\n" % sql)
+        stderr.write("VAR: %s\n" % params)
     r = db.execute(sql, params).fetchone()
     return "" if r == None else r[0]
 
@@ -196,7 +197,9 @@ def query_array(props, sql, params):
 
 
 def query_update(props, sql, params):
-    s = f"{sql} returning json_object({prepare_json(props)})"
+    # NOTE: omit returning clause due to the newest sqlite requirements
+    # s = f"{sql} returning json_object({prepare_json(props)})"
+    s = sql
     return query_onecolumn(s, params)
 
 
