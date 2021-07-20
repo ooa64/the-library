@@ -1,4 +1,19 @@
 
+-- NOTE: check for sqlite version and required modules
+create temp table check_sqlite (i int);
+/
+create temp trigger check_sqlite before insert on check_sqlite
+    begin
+    	-- NOTE: check for returning clause (3.35) and generated column (3.31)
+	   select raise(fail, "sqlite 3.31+ is required")
+	        where not cast(printf('%f',sqlite_version()) as real) >= 3.31;
+	   -- NOTE: check for json functions
+	   select raise(fail, "JSON1 module is requred")
+	        where not sqlite_compileoption_used('ENABLE_JSON1') = 1;
+    end;
+/
+insert into check_sqlite(i) values(0);
+/
 create table if not exists reader (
     name        text primary key,
     state       text default 'active' check (state in ('active','blocked')),
