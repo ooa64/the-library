@@ -94,8 +94,8 @@ def init(dbschema, dbfile):
     db.execute("PRAGMA encoding=\"UTF-8\"")
     for s in read_file(dbschema).split("/"):
         db.execute(s)
-    if DEBUG:
-        db.set_trace_callback(print)
+    # if DEBUG:
+    #     db.set_trace_callback(print)
 
 
 def done():
